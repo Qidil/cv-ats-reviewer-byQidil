@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+/* Tokens from project-context/StyleGuide.md. primary/secondary/muted are text tones and
+   subtle/strong are border tones; buttons and focus rings use the action colors. */
+@theme {
+  --color-app: #0b0f19;
+  --color-surface: #111827;
+  --color-surface-elevated: #1f2937;
+  --color-subtle: #374151;
+  --color-strong: #6b7280;
+
+  --color-primary: #f9fafb;
+  --color-secondary: #9ca3af;
+  --color-muted: #8a93a3;
+
+  --color-critical: #ef4444;
+  --color-critical-strong: #dc2626;
+  --color-critical-hover: #b91c1c;
+  --color-advisory: #f59e0b;
+  --color-advisory-strong: #d97706;
+  --color-pass: #10b981;
+  --color-pass-strong: #059669;
+  --color-action: #3b82f6;
+  --color-action-strong: #2563eb;
+  --color-action-hover: #1d4ed8;
+  --color-action-active: #1e40af;
+
+  --text-display: 2.25rem;
+  --text-display--line-height: 2.5rem;
+  --text-display--letter-spacing: -0.025em;
+  --text-display--font-weight: 700;
+  --text-h2: 1.5rem;
+  --text-h2--line-height: 2rem;
+  --text-h2--letter-spacing: -0.02em;
+  --text-h2--font-weight: 600;
+  --text-h3: 1.125rem;
+  --text-h3--line-height: 1.75rem;
+  --text-h3--letter-spacing: -0.01em;
+  --text-h3--font-weight: 600;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.5rem;
+  --text-small: 0.8125rem;
+  --text-small--line-height: 1.25rem;
+  --text-small--letter-spacing: 0.01em;
+  --text-code: 0.8125rem;
+  --text-code--line-height: 1.25rem;
+  --text-code--font-weight: 500;
+}
+
+/* --font-inter is set on <html> by next/font, so it must resolve at use time. */
+@theme inline {
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-app font-sans text-body text-primary antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-action);
+    outline-offset: 2px;
+  }
+}

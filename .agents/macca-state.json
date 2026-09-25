@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "hashAlgorithm": "sha256",
+  "files": {
+    "macca-managed-skills.txt": "ba2691fbdf452ecb0569af2b99d7b028d0804851509a214e7967a45481f0a3ff",
+    "macca-lock.json": "beff21985e229754aee44e6d3a382e7db8af9ed3377f242d035c9743709a30e1",
+    "macca-tools.txt": "0d74cc0a7af2a416cc5b856425aaaab1618cda1fe909905f16858274c5330a39"
+  }
+}

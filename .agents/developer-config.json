@@ -1,0 +1,23 @@
+{
+  "languagePreferences": {
+    "communication": {
+      "raw": "Bahasa Indonesia",
+      "normalized": "indonesian"
+    },
+    "documents": {
+      "raw": "English",
+      "normalized": "english"
+    }
+  },
+  "developerPreferences": {
+    "workMode": "plan-first",
+    "scope": "fullstack"
+  },
+  "brainstormPreferences": {
+    "discussionMode": "one-by-one",
+    "recommendations": true
+  },
+  "codeReviewPreferences": {
+    "fixMode": "report-first"
+  }
+}

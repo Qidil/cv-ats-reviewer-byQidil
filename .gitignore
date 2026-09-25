@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# Next.js build output
+.next/
+out/
+build/
+dist/
+
+# Environment and Secret files
+.env*
+!.env.example
+*.env
+
+# Specs, phase plans, and the hand-filled credentials file stay on this machine only
+# (owner decision 2026-09-25).
+project-context/
+
+# TypeScript and Next.js generated files
+*.tsbuildinfo
+next-env.d.ts
+.vercel/
+
+# Local-only tool state (owner decision D2, 2026-09-25): the graph index is rebuilt
+# by codebase-memory-mcp, and the impeccable file holds per-machine hook settings.
+.codebase-memory/
+.impeccable/config.local.json
+
+# Debug and runtime logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Editor and OS files
+.DS_Store
+*.pem
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Temporary and test coverage
+coverage/
+.vitest/
+.playwright-mcp/
+.nyc_output/
+tmp/
+temp/

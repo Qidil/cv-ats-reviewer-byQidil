@@ -1,0 +1,121 @@
+{
+  "version": "3.0.0",
+  "skills": [
+    "_shared",
+    "add-feature",
+    "brainstorm-api",
+    "brainstorm-architecture",
+    "brainstorm-prd",
+    "brainstorm-rules",
+    "brainstorm-schema",
+    "brainstorm-styleguide",
+    "brainstorm-task",
+    "bug-fix",
+    "code-review",
+    "developer",
+    "help",
+    "meet",
+    "quick-dev",
+    "release-readiness",
+    "setup-macca-method",
+    "spec-audit",
+    "spec-compliance",
+    "spec-init"
+  ],
+  "hashAlgorithm": "sha256",
+  "payloadFiles": {
+    "_shared": {
+      "references/additional-skills.md": "41362d866ee9dbbac086f749cb732286b37debfbc83a8501e07f5e2dcc3d9658",
+      "references/brainstorm-session.md": "61988e49413864e5184f45a67015c5fb80467839bf4eab19b23ae7ad1c11dea4",
+      "references/config-mutation.md": "06ee7f8dab4b34afbb87da4b97dcae145d39befbed29b5e869005cc2d119c4c6",
+      "references/finding-format.md": "d4403ed1f1f5b8cd11223e0f218b128420e33f79a5120807ea840705c84ab257",
+      "references/fix-mode.md": "cf94efa0cf867091420c6c58ebce3047e552f7a62c1fe698f23b5fd5aac69991",
+      "references/human-loop.md": "638a254d919839febb472126e10266c611a26291792f8ba77f9e3804d79ebb0b",
+      "references/implementation-principles.md": "936bb32384e67a40468a6223f28a9e5294e115c263ac188d045db19d906aaa96",
+      "references/interaction-contract.md": "7291dcce80354ab59849138ded2a7504823c59ffcc6a86c37f3d831e96385740",
+      "references/invocation-policy.md": "27b5979edb5ec1c90787cb0a968556a80afdfbfebf6b0be4ae2bdcb7fdcf87f5",
+      "references/language-config.md": "74ca044eff30d605b0b44550f640ed7e80a4585cb134768e1fe55d01106460b3",
+      "references/output-ownership.md": "f68b4e9a2cca49442bc97f8bfb337ff4ea16a71d1b93c36a4237af994b620ed5",
+      "references/personas.md": "cc192ef3020211693bf34435abc93dc4390a662d3442a8f40319d5823424aef1",
+      "references/planning-principles.md": "a48b5e579d6763f0b8225b78bfd09e4048959aa9786e00934f192269b586ad58",
+      "references/runtime-config.md": "c598ee6f77ee6c3bac6e1485df317fe93b44777f6ab3a2c261411c23511f3d5a",
+      "references/scope-delta.md": "6b417590f563bf34beebb8912e3012e1044d22ac5f147d190fe5d3837eb9747d",
+      "references/scope-rules.md": "8e2bbb9bfbd9fac08b6838a27c6244f518b38cfaa4c3461d79617c4f91ba034e",
+      "references/skill-catalog.md": "efe2c2c59dee8da9f8ca93e7ae987aee6aed13ae255981c2633b1f04537c708d",
+      "references/workspace-safety.md": "cbf1b31b89d7627d555364088b09e47e9bfe1f63280cabfafbedb83755b192d8",
+      "scripts/config-file.js": "aebd52c75124e365a5fb0a04768966198ab2c024032418c0fb6cdede51e8af47",
+      "scripts/config-validator.js": "0b0b1c81643bdb276ea64908a6dc151bd209c42f82d9aca6943b22add44bc786",
+      "scripts/read-preferences.js": "311985c1f81f491cdd93fd290fbfe15f3129cdf07937324c69d967ce055c715a",
+      "scripts/validate-skills.py": "d328a31bd615e905352cd3dbf8c9b13c39d821979bdf2e18ac30c5ac6b87bc7a"
+    },
+    "add-feature": {
+      "SKILL.md": "2aa50d4853a09a305e01befdab9ab22ee91a470ec6b975237b6da6576837fd3f"
+    },
+    "brainstorm-api": {
+      "assets/api.template.md": "16d69807d2a2690b110fd25f40f30f113007aa4933e1b8d652249c3f129bdcce",
+      "SKILL.md": "d6e2947cdd7bb6f64c06561f1e7d3b9e66f17676d60ed0a1c017a1faffa3d220"
+    },
+    "brainstorm-architecture": {
+      "assets/architecture.template.md": "db3de855dc12494350f5d87de59584380ceced759b6fdf2f750ce51159818a1c",
+      "SKILL.md": "90776745f5e17822a9a8e0430c2c14be3648f22f4ed19fad05973eef3ffeb007"
+    },
+    "brainstorm-prd": {
+      "assets/PRD.template.md": "41282fc3ec06b9c3cfa2b3f66e4b23b24a776d8810596e1e912dd87d65953da0",
+      "SKILL.md": "fdaf0557333d19df0cdea421c2d843833c7bc5f745ba6c133a2e1bf8aaf6778d"
+    },
+    "brainstorm-rules": {
+      "assets/rules.template.md": "89d351997e10530d26dbe98cdb4215c74f3e14270fc0421d2c1e5957bea8f346",
+      "SKILL.md": "8fe034a7e58721a6bb102843a0c7b94553ad68c77317c4cffb87596b18de422e"
+    },
+    "brainstorm-schema": {
+      "assets/schema.template.md": "58f62003e2143dcbe48c35e614b8ff356d5254c5cdcab5fc6bacedcf5648c100",
+      "SKILL.md": "42365139d6ec514374c3829b9b2bfc999dbd60b6a1be02b1190fee757fc7eccc"
+    },
+    "brainstorm-styleguide": {
+      "assets/StyleGuide.template.md": "69e49f3f5af180b0c64eda313bb631b505a0b9b3b42742e742e54849fe5a3f9a",
+      "SKILL.md": "d6e1a01647a9e06846c9a83f074ad1af9359df5e91fd10bb628ea5fb2326b21b"
+    },
+    "brainstorm-task": {
+      "assets/Task.template.md": "4967b4c02b893f771ad0c3a6e8b18e22037e11ec7827f0f46c655f86837ccb33",
+      "SKILL.md": "1e0d81b0b50ffff69a81d5841916fda319474a02a938e371d886033093ea90af"
+    },
+    "bug-fix": {
+      "assets/bug-log.template.md": "e39691439e313a3dd8dbdb3f289a903c5c617039faf93a41596db95c61899441",
+      "SKILL.md": "aa530f82bbcdf163fa0732679f4153e5784c449950efea7407bc44c684b6da6e"
+    },
+    "code-review": {
+      "references/review-checklist.md": "73c951d460e09a93836bfb5a8ffa13a490a7470254a308b8ffebead4b9deb2a8",
+      "SKILL.md": "99f4ce1707f68690324db954313ed814231864c7ccc208faa4fb949e3c534334"
+    },
+    "developer": {
+      "references/close-phase.md": "02e4a754e9357af7bd13288daa54c8639a68eede9321dcb37358b78b5bec95f5",
+      "references/execute-task.md": "f677f0e19758a2eef33698cd6a778a4e3788a5534031b29f62ed39c07fcc93cd",
+      "references/onboarding.md": "588b23d63a5a536da2f2b8e2a54798a14c8df98578132a78883ab44796f698c6",
+      "SKILL.md": "86d99d0edc51318ce1587d56e0a380c9485f82829809de0ef72c7b58dd624eeb"
+    },
+    "help": {
+      "SKILL.md": "9d302cc3feb749d8da76df80fa3d9fb43ecda67dba61c225fd0412181a777e19"
+    },
+    "meet": {
+      "SKILL.md": "53ae8d3bd8664a65a8f4bee6886319148d4bbfbbee3ae636b82486f6d194b822"
+    },
+    "quick-dev": {
+      "SKILL.md": "48a52e37f54542a0088743c685a2a19a314775173722c7d4042519a744d6f025"
+    },
+    "release-readiness": {
+      "SKILL.md": "82132eadd4be7ced89b6aaeaace84ad8819d7803c22c046252fe1879f771e244"
+    },
+    "setup-macca-method": {
+      "SKILL.md": "766e6eb10b0efcadadb55e9dbad64cda62e2d595fdcecc2db34b7ce07d491e6f"
+    },
+    "spec-audit": {
+      "SKILL.md": "24063ebfd5f0ff741338acfbd93f9c791ab3908ad3c8a1cda29901ecb4e8d0e6"
+    },
+    "spec-compliance": {
+      "SKILL.md": "0f9e970a11cf491dd214c6bdd9dea9b8a94ecbe046c9e5dc8c3e950ceae6770a"
+    },
+    "spec-init": {
+      "SKILL.md": "d5f3f62821f5bbb4cc0d302b594e09a5e077dd411b4f3bee381bfec06eb87fcf"
+    }
+  }
+}
