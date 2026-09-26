@@ -1,16 +1,24 @@
 import { describe, expect, it } from "vitest";
+import type { Language } from "@/lib/i18n/language";
 import { extractPdf } from "@/lib/pdf/extractor";
 import { makePdf, textLine } from "@/lib/pdf/test-utils/make-pdf";
 import type { HiddenTextSummary, LayoutMetadata, PdfMetadata, TypographyMetadata } from "@/lib/pdf/types";
 import { ATS_CHECK_IDS, ATS_CHECK_WEIGHTS, type AtsCheck, type AtsCheckId } from "@/types/ats";
 import {
-  CHECK_NAMES,
-  analyzeCv,
+  CHECK_NAMES as CHECK_NAMES_BY_LANGUAGE,
+  analyzeCv as analyzeCvIn,
   computeWeightedScore,
-  deriveTypographyFindings,
+  deriveTypographyFindings as deriveTypographyFindingsIn,
   statusFor,
   type DeterministicReport,
 } from "./rubric";
+
+// Most tests pin the Indonesian text; the English table has its own block at the end.
+const CHECK_NAMES = CHECK_NAMES_BY_LANGUAGE.id;
+const analyzeCv = (cv: string, jd: string, metadata: PdfMetadata | null = null, language: Language = "id") =>
+  analyzeCvIn(cv, jd, metadata, language);
+const deriveTypographyFindings = (metadata: PdfMetadata | null, language: Language = "id") =>
+  deriveTypographyFindingsIn(metadata, language);
 
 const SAMPLE_CV = [
   "Budi Santoso",
@@ -285,7 +293,8 @@ describe("analyzeCv checks", () => {
 
     for (const id of ["keyword", "skills"] as const) {
       expect(check(report, id)).toMatchObject({ score: 0, status: "warn" });
-      expect(check(report, id).detail).toContain("Mode B");
+      expect(check(report, id).detail).toContain("dinilai oleh AI");
+      expect(check(report, id).detail).not.toContain("Mode B");
     }
   });
 
@@ -294,7 +303,7 @@ describe("analyzeCv checks", () => {
     const report = analyzeCv(withoutSkills, "", CLEAN_METADATA);
     const deferredNames = [CHECK_NAMES.keyword, CHECK_NAMES.skills];
 
-    expect(check(report, "skills").detail).toContain("Mode B");
+    expect(check(report, "skills").detail).toContain("dinilai oleh AI");
     expect(report.weaknesses.some((weakness) => deferredNames.some((name) => weakness.startsWith(name)))).toBe(false);
     expect(report.suggestions.map((suggestion) => suggestion.category)).not.toContain("keywords");
     expect(report.suggestions.map((suggestion) => suggestion.category)).not.toContain("skills");
@@ -796,5 +805,56 @@ describe("typography findings", () => {
     });
 
     expect(ids(plainTitle)).toEqual(["typo-bold-underuse"]);
+  });
+});
+
+describe("rubric text per language (BR-13)", () => {
+  it("names the checks and writes every sentence in English", () => {
+    const report = analyzeCv(WEAK_CV, SAMPLE_JD, CLEAN_METADATA, "en");
+
+    expect(report.atsChecks.map((item) => item.name)).toEqual([
+      "Keyword Match",
+      "Skills Coverage",
+      "Section Completeness",
+      "ATS-Friendly Format",
+      "Quantified Achievements",
+      "Readability & Structure",
+    ]);
+    const prose = [
+      ...report.atsChecks.map((item) => item.detail),
+      ...report.weaknesses,
+      ...report.suggestions.flatMap((item) => [item.title, item.description]),
+    ].join(" ");
+    expect(prose).not.toMatch(/\b(dan|yang|belum|Tambahkan|Pakai|Ubah|bagian)\b/);
+  });
+
+  it("scores the same in both languages", () => {
+    const scores = (language: Language) =>
+      analyzeCv(SAMPLE_CV, SAMPLE_JD, CLEAN_METADATA, language).atsChecks.map((item) => [item.id, item.score, item.status]);
+
+    expect(scores("en")).toEqual(scores("id"));
+  });
+
+  it("writes typography findings and the formatting note in English", () => {
+    const findings = deriveTypographyFindings(
+      withTypography({
+        fonts: [
+          { family: "Helvetica", bold: false, italic: false, size: 11, charCount: 900 },
+          { family: "Helvetica", bold: false, italic: false, size: 16, charCount: 12 },
+        ],
+      }),
+      "en",
+    );
+
+    expect(findings.suggestions[0]).toMatchObject({ title: "Make your name and section headings bold" });
+    expect(findings.summary).toBe("Typography: headings not bold.");
+  });
+
+  it("never names Mode B in a deferred check", () => {
+    for (const language of ["en", "id"] as const) {
+      for (const item of analyzeCv(SAMPLE_CV, "", CLEAN_METADATA, language).atsChecks) {
+        expect(item.detail).not.toContain("Mode B");
+      }
+    }
   });
 });

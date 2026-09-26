@@ -39,6 +39,9 @@ function cvFixture(overrides: Partial<NewCv> = {}): NewCv {
     uploadedAt: "2026-09-01T08:00:00.000Z",
     rawText: "Budi Santoso, Frontend Developer",
     sanitizedText: "Budi Santoso, Frontend Developer",
+    visibleText: "Budi Santoso, Frontend Developer",
+    source: "operator-list",
+    hiddenText: { checked: true, runCount: 0, charCount: 0, hasWords: false, reasons: [], samples: [] },
     pdfData: new Uint8Array([0x25, 0x50, 0x44, 0x46]).buffer,
     pageCount: 1,
     ...overrides,
@@ -67,6 +70,7 @@ function reviewFixture(cvId: number, overrides: Partial<NewReview> = {}): NewRev
       },
     ],
     modelUsed: "openrouter/free",
+    language: "id",
     createdAt: "2026-09-01T08:05:00.000Z",
     ...overrides,
   };
@@ -210,5 +214,99 @@ describe("deleteCv", () => {
     await expect(storage.getCvFile(keptCvId)).resolves.toBeDefined();
     await expect(storage.getReviewsByCvId(keptCvId)).resolves.toHaveLength(1);
     await expect(storage.getJobMatchesByCvId(keptCvId)).resolves.toHaveLength(1);
+  });
+
+  it("also removes the CV's page data", async () => {
+    const cvId = await storage.saveCv(cvFixture());
+
+    await storage.deleteCv(cvId);
+
+    await expect(storage.getCvPages(cvId)).resolves.toBeUndefined();
+  });
+});
+
+describe("page data", () => {
+  it("keeps page images as Blobs and the runs next to them", async () => {
+    const image = new Blob([new Uint8Array([0x52, 0x49, 0x46, 0x46])], { type: "image/webp" });
+    const cvId = await storage.saveCv(
+      cvFixture({
+        pages: [{ pageNumber: 1, box: { x0: 0, y0: 0, x1: 612, y1: 792 }, image: { blob: image, width: 1240, height: 1605 } }],
+        runs: [{ pageNumber: 1, x: 72, y: 740, width: 80, fontSize: 11, hidden: false, textStart: 0, textEnd: 12 }],
+      }),
+    );
+
+    const stored = await storage.getCvPages(cvId);
+
+    expect(stored?.runs).toHaveLength(1);
+    expect(stored?.runsOmitted).toBe(false);
+    expect(stored?.pages[0].image?.width).toBe(1240);
+    expect(stored?.pages[0].image?.blob).toBeInstanceOf(Blob);
+    expect(stored?.pages[0].image?.blob.size).toBe(4);
+  });
+
+  it("stores an empty record when a CV comes without page data", async () => {
+    const cvId = await storage.saveCv(cvFixture());
+
+    await expect(storage.getCvPages(cvId)).resolves.toEqual({ cvId, pages: [], runs: [], runsOmitted: false });
+  });
+});
+
+describe("saveAnalysis", () => {
+  // saveAnalysis sets cvId and reviewId itself, so the fixtures' placeholder ids are overwritten.
+  const review = () => modeBReviewFixture(0);
+  const match = (jobTitle: string, matchScore: number) => matchFixture(0, 0, { jobTitle, matchScore });
+
+  it("writes a new CV, its review, and its job matches together", async () => {
+    const { cvId, reviewId } = await storage.saveAnalysis({
+      cv: cvFixture(),
+      review: review(),
+      jobMatches: [match("UI Engineer", 64), match("Frontend Developer", 88)],
+    });
+
+    await expect(storage.getCvFile(cvId)).resolves.toBeDefined();
+    await expect(storage.getCvPages(cvId)).resolves.toBeDefined();
+    expect((await storage.getReviewsByCvId(cvId)).map((item) => item.id)).toEqual([reviewId]);
+    expect((await storage.getJobMatchesByReviewId(reviewId)).map((item) => item.jobTitle)).toEqual([
+      "Frontend Developer",
+      "UI Engineer",
+    ]);
+  });
+
+  it("adds a new analysis to a stored CV", async () => {
+    const cvId = await storage.saveCv(cvFixture());
+
+    const saved = await storage.saveAnalysis({ cvId, review: review(), jobMatches: [] });
+
+    expect(saved.cvId).toBe(cvId);
+    await expect(storage.getAllCvs()).resolves.toHaveLength(1);
+    await expect(storage.getReviewsByCvId(cvId)).resolves.toHaveLength(1);
+  });
+
+  it("writes nothing when any part is invalid", async () => {
+    const modeA = { ...review(), mode: "mode-a" as const };
+
+    await expect(
+      storage.saveAnalysis({ cv: cvFixture(), review: modeA, jobMatches: [match("UI Engineer", 64)] }),
+    ).rejects.toBeInstanceOf(StorageIntegrityError);
+    await expect(storage.saveAnalysis({ cvId: 404, review: review(), jobMatches: [] })).rejects.toBeInstanceOf(
+      StorageIntegrityError,
+    );
+    await expect(storage.getAllCvs()).resolves.toEqual([]);
+  });
+});
+
+describe("clearAll", () => {
+  it("empties every table", async () => {
+    await storage.saveAnalysis({
+      cv: cvFixture(),
+      review: modeBReviewFixture(0),
+      jobMatches: [matchFixture(0, 0)],
+    });
+
+    await storage.clearAll();
+
+    for (const table of [db.cvs, db.cv_files, db.cv_pages, db.reviews, db.job_matches]) {
+      await expect(table.count()).resolves.toBe(0);
+    }
   });
 });

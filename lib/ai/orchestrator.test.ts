@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import type { ApiError } from "@/lib/api/errors";
+import { ApiError, errorBody } from "@/lib/api/errors";
 import { OPENROUTER_CHAT_URL, runModelChain, type ModelChainOptions } from "./orchestrator";
 import type { ChatMessage } from "./prompts";
+import { CHAT_URLS, PROVIDERS } from "./providers";
 
 const MODELS = ["openrouter/free", "model-2", "model-3", "model-4", "model-5"];
 type Reply = Response | Error | ((init: RequestInit) => Promise<Response>);
@@ -78,11 +79,33 @@ describe("runModelChain success paths", () => {
   it("starts with openrouter/free and returns the first valid answer (AC-04.3)", async () => {
     const { calls, promise } = chain([completion(VALID)]);
 
-    await expect(promise).resolves.toEqual({ result: { ok: true }, modelUsed: "openrouter/free", failoverOccurred: false });
+    await expect(promise).resolves.toEqual({
+      result: { ok: true },
+      modelUsed: "openrouter/free",
+      failoverOccurred: false,
+      continuationOccurred: false,
+    });
     expect(calls).toHaveLength(1);
     expect(calls[0]).toMatchObject({ url: OPENROUTER_CHAT_URL, model: "openrouter/free", authorization: "Bearer server-key" });
     expect(calls[0].body).toMatchObject({ temperature: 0.2, max_tokens: 8192, reasoning: { enabled: false } });
     expect(calls[0].body).not.toHaveProperty("response_format");
+  });
+
+  it("never follows a redirect, so the key header cannot travel to another host (G-22)", async () => {
+    let redirect: RequestRedirect | undefined;
+    const { promise } = chain([
+      async (init: RequestInit) => {
+        redirect = init.redirect;
+        return completion(VALID);
+      },
+    ]);
+    await promise;
+    expect(redirect).toBe("manual");
+  });
+
+  it("reports a switch and a continuation when the next model finished a cut-off answer (DELTA-51)", async () => {
+    const { promise } = chain([completion("{", "length"), completion(VALID)]);
+    await expect(promise).resolves.toMatchObject({ modelUsed: "model-2", failoverOccurred: true, continuationOccurred: true });
   });
 
   it("moves to the next model after a 429 (AC-04.1)", async () => {
@@ -210,5 +233,52 @@ describe("runModelChain per-call cap (rules.md §4.2.2)", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe("runModelChain with one model of another provider (ADR-009)", () => {
+  const single = { models: ["m", "m"], stopOnModelError: true, keyOwner: "user", provider: PROVIDERS.openai } as const;
+
+  it("continues a cut-off answer on the same model, which is a continuation but no switch (DELTA-51)", async () => {
+    const { calls, promise } = chain([completion("{", "length"), completion(VALID)], single);
+    await expect(promise).resolves.toEqual({
+      result: { ok: true },
+      modelUsed: "m",
+      failoverOccurred: false,
+      continuationOccurred: true,
+    });
+    expect(calls.map((call) => call.url)).toEqual([CHAT_URLS.openai, CHAT_URLS.openai]);
+    expect(calls[1]?.messages[1]?.content).toBe("lanjutkan:{");
+  });
+
+  it("tries once more after a transient failure", async () => {
+    const { calls, promise } = chain([httpError(503), completion(VALID)], single);
+    await expect(promise).resolves.toMatchObject({ modelUsed: "m" });
+    expect(calls).toHaveLength(2);
+  });
+
+  it("ends at once on a 400, which the same model would repeat", async () => {
+    const { calls, promise } = chain([httpError(400), completion(VALID)], single);
+    expect(await codeOf(promise)).toBe("INVALID_INPUT");
+    expect(calls).toHaveLength(1);
+  });
+
+  it("ends at once on a 429 with the personal-key wording", async () => {
+    const { calls, promise } = chain([httpError(429), completion(VALID)], single);
+    const error = (await promise.catch((caught: unknown) => caught)) as ApiError;
+    expect(error.code).toBe("RATE_LIMITED_429");
+    expect(errorBody(error).error.message).toBe("Your AI provider is limiting requests for this key right now. Try again in a minute.");
+    expect(calls).toHaveLength(1);
+  });
+
+  it("passes a refusal from the custom endpoint guard straight through", async () => {
+    const { calls, promise } = chain([new ApiError("INVALID_INPUT"), completion(VALID)], {
+      ...single,
+      provider: PROVIDERS.custom,
+      baseUrl: "https://api.example.com/v1",
+    });
+    expect(await codeOf(promise)).toBe("INVALID_INPUT");
+    expect(calls[0]?.url).toBe("https://api.example.com/v1/chat/completions");
+    expect(calls).toHaveLength(1);
   });
 });

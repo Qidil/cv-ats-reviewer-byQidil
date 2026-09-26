@@ -1,96 +1,41 @@
 import { ApiError } from "@/lib/api/errors";
-import type { ApiErrorCode } from "@/types/api";
 import type { ChatMessage } from "./prompts";
+import { PROVIDERS, type CallOutcome, type ProviderAdapter } from "./providers";
 
-export const OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions";
+export { OPENROUTER_CHAT_URL } from "./providers";
 
-/** Values the old engine used: a low temperature for stable scores and room for Mode B's longer JSON. */
-const REQUEST_SETTINGS = { temperature: 0.2, max_tokens: 8192, reasoning: { enabled: false } } as const;
 /** rules.md §4.2.2: one stalled model may use half of the default budget, so the next model still gets a turn. */
 const MAX_CALL_MS = 60_000;
+
+export type FetchLike = (url: string, init: RequestInit) => Promise<Response>;
 
 export interface ModelChainOptions<T> {
   apiKey: string;
   /** A rejected server key is the owner's problem, a rejected personal key is the user's. */
   keyOwner: "user" | "server";
+  /** Defaults to OpenRouter, the only provider with the app's free-model chain (ADR-009). */
+  provider?: ProviderAdapter;
+  /** The checked base URL of a custom endpoint. */
+  baseUrl?: string | null;
   models: readonly string[];
+  /** rules.md §4.2.1: one model called twice would answer a 400 or a 429 the same way, so either ends the run. */
+  stopOnModelError?: boolean;
   budgetMs: number;
   /** Receives the last cut-off output, or null for a normal request. */
   buildMessages: (partialOutput: string | null) => ChatMessage[];
   /** Throws when the content is not a usable report. */
   parse: (content: string) => T;
-  fetch?: typeof fetch;
+  fetch?: FetchLike;
   now?: () => number;
 }
 
 export interface ModelChainResult<T> {
   result: T;
   modelUsed: string;
+  /** DELTA-51: a model other than the first wrote the result; a second call to the same model is not a switch. */
   failoverOccurred: boolean;
-}
-
-type Outcome =
-  | { kind: "content"; content: string }
-  | { kind: "rate-limited" }
-  | { kind: "rejected" }
-  | { kind: "unavailable" }
-  | { kind: "truncated"; partial: string }
-  | { kind: "stop"; code: ApiErrorCode };
-
-interface OpenRouterBody {
-  error?: { code?: unknown };
-  choices?: Array<{ finish_reason?: unknown; message?: { content?: unknown }; error?: { code?: unknown } }>;
-}
-
-/** rules.md §4.2.4: another model with the same key would fail the same way. */
-function stopCode(status: number, keyOwner: "user" | "server"): ApiErrorCode | null {
-  switch (status) {
-    case 401:
-      return keyOwner === "user" ? "AUTH_INVALID_KEY" : "SERVICE_NOT_CONFIGURED";
-    case 402:
-      return "CREDITS_EXHAUSTED";
-    case 403:
-      return "CONTENT_BLOCKED";
-    default:
-      return null;
-  }
-}
-
-/** OpenRouter answers 200 once a provider accepts the request, so failures can also arrive in the body. */
-async function readOutcome(response: Response, keyOwner: "user" | "server"): Promise<Outcome> {
-  if (response.status === 429) {
-    return { kind: "rate-limited" };
-  }
-  // A 400 can be specific to one model (context size, unsupported parameter, unknown custom model ID).
-  if (response.status === 400) {
-    return { kind: "rejected" };
-  }
-  const stop = stopCode(response.status, keyOwner);
-  if (stop !== null) {
-    return { kind: "stop", code: stop };
-  }
-  if (!response.ok) {
-    return { kind: "unavailable" };
-  }
-  let body: OpenRouterBody;
-  try {
-    body = (await response.json()) as OpenRouterBody;
-  } catch {
-    return { kind: "unavailable" };
-  }
-  const choice = body.choices?.[0];
-  const errorCode = body.error?.code ?? choice?.error?.code;
-  if (errorCode !== undefined) {
-    return Number(errorCode) === 429 ? { kind: "rate-limited" } : { kind: "unavailable" };
-  }
-  const content = typeof choice?.message?.content === "string" ? choice.message.content : "";
-  if (choice?.finish_reason === "length") {
-    return { kind: "truncated", partial: content };
-  }
-  if (choice?.finish_reason === "error" || choice?.finish_reason === "content_filter" || content.trim() === "") {
-    return { kind: "unavailable" };
-  }
-  return { kind: "content", content };
+  /** DELTA-51: the result continued a cut-off answer. */
+  continuationOccurred: boolean;
 }
 
 /**
@@ -98,7 +43,8 @@ async function readOutcome(response: Response, keyOwner: "user" | "server"): Pro
  * cut-off answer is passed to the next model as reference; the error after the last model follows §4.2.6.
  */
 export async function runModelChain<T>(options: ModelChainOptions<T>): Promise<ModelChainResult<T>> {
-  const fetchImpl = options.fetch ?? fetch;
+  const fetchImpl: FetchLike = options.fetch ?? ((url, init) => fetch(url, init));
+  const provider = options.provider ?? PROVIDERS.openrouter;
   const now = options.now ?? Date.now;
   const deadline = now() + options.budgetMs;
   let partialOutput: string | null = null;
@@ -106,7 +52,7 @@ export async function runModelChain<T>(options: ModelChainOptions<T>): Promise<M
   let onlyRateLimited = true;
   let rejectedCount = 0;
 
-  for (const [index, model] of options.models.entries()) {
+  for (const model of options.models) {
     const remaining = deadline - now();
     if (remaining <= 0) {
       throw new ApiError("NETWORK_TIMEOUT");
@@ -114,16 +60,28 @@ export async function runModelChain<T>(options: ModelChainOptions<T>): Promise<M
     const callMs = Math.min(remaining, MAX_CALL_MS);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), callMs);
-    let outcome: Outcome;
+    let outcome: CallOutcome;
     try {
-      const response = await fetchImpl(OPENROUTER_CHAT_URL, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${options.apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model, messages: options.buildMessages(partialOutput), ...REQUEST_SETTINGS }),
-        signal: controller.signal,
+      const call = provider.buildCall({
+        apiKey: options.apiKey,
+        model,
+        messages: options.buildMessages(partialOutput),
+        baseUrl: options.baseUrl ?? null,
       });
-      outcome = await readOutcome(response, options.keyOwner);
-    } catch {
+      const response = await fetchImpl(call.url, {
+        method: "POST",
+        headers: call.headers,
+        body: call.body,
+        signal: controller.signal,
+        // A followed redirect would carry the key header to another host (rules.md §4.2.7); the 3xx is read as a failed call.
+        redirect: "manual",
+      });
+      outcome = await provider.readOutcome(response, options.keyOwner);
+    } catch (error) {
+      // The custom endpoint guard refuses an address with the catalog error itself.
+      if (error instanceof ApiError) {
+        throw error;
+      }
       outcome = { kind: "unavailable" };
     } finally {
       clearTimeout(timer);
@@ -136,11 +94,17 @@ export async function runModelChain<T>(options: ModelChainOptions<T>): Promise<M
 
     switch (outcome.kind) {
       case "stop":
-        throw new ApiError(outcome.code);
+        throw new ApiError(outcome.code, { keyOwner: options.keyOwner });
       case "rejected":
+        if (options.stopOnModelError) {
+          throw new ApiError("INVALID_INPUT", { keyOwner: options.keyOwner });
+        }
         rejectedCount += 1;
         continue;
       case "rate-limited":
+        if (options.stopOnModelError) {
+          throw new ApiError("RATE_LIMITED_429", { keyOwner: options.keyOwner });
+        }
         continue;
       case "unavailable":
         onlyRateLimited = false;
@@ -154,7 +118,12 @@ export async function runModelChain<T>(options: ModelChainOptions<T>): Promise<M
       case "content":
         onlyRateLimited = false;
         try {
-          return { result: options.parse(outcome.content), modelUsed: model, failoverOccurred: index > 0 };
+          return {
+            result: options.parse(outcome.content),
+            modelUsed: model,
+            failoverOccurred: model !== options.models[0],
+            continuationOccurred: partialOutput !== null,
+          };
         } catch {
           lastFailure = "JSON_PARSE_FAILED";
         }
@@ -162,10 +131,10 @@ export async function runModelChain<T>(options: ModelChainOptions<T>): Promise<M
   }
 
   if (options.models.length > 0 && rejectedCount === options.models.length) {
-    throw new ApiError("INVALID_INPUT");
+    throw new ApiError("INVALID_INPUT", { keyOwner: options.keyOwner });
   }
   if (options.models.length > 0 && onlyRateLimited) {
-    throw new ApiError("RATE_LIMITED_429");
+    throw new ApiError("RATE_LIMITED_429", { keyOwner: options.keyOwner });
   }
   throw new ApiError(lastFailure ?? "MODEL_UNAVAILABLE");
 }

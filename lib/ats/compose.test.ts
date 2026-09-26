@@ -34,7 +34,7 @@ let deterministic: DeterministicReport;
 beforeAll(async () => {
   const page = (lines: string[]) => lines.map((line, index) => textLine(line, 72, 740 - index * 16)).join("\n");
   extraction = await extractPdf(makePdf([page(PAGE_ONE), `${page(PAGE_TWO)}\nq 1 1 1 rg ${textLine(HIDDEN, 72, 300)} Q`]));
-  deterministic = analyzeCv(extraction.visibleText, JD, extraction.metadata);
+  deterministic = analyzeCv(extraction.visibleText, JD, extraction.metadata, "id");
 });
 
 function aiReport(overrides: Partial<AiReport> = {}): AiReport {
@@ -76,7 +76,7 @@ describe("composeReport scores", () => {
     const report = composeReport({ mode: "mode-a", deterministic, ai: aiReport(), extraction });
     const byId = new Map(report.atsChecks.map((check) => [check.id, check]));
 
-    expect(byId.get("keyword")).toMatchObject({ score: 79, status: "warn", name: CHECK_NAMES.keyword });
+    expect(byId.get("keyword")).toMatchObject({ score: 79, status: "warn", name: CHECK_NAMES.id.keyword });
     expect(byId.get("skills")).toMatchObject({ score: 80, status: "pass" });
     expect(byId.get("sections")).toMatchObject({ score: 59, status: "fail" });
     expect(byId.get("quantified")).toMatchObject({ score: 60, status: "warn" });

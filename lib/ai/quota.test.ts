@@ -4,31 +4,31 @@ import {
   clientNetwork,
   createMemoryStore,
   createUpstashStore,
-  formatWib,
   nextHourMs,
   nextResetMs,
+  quotaDay,
+  quotaIso,
   quotaKey,
   readQuota,
   recordAnalysis,
   recordRequest,
   requestKey,
-  wibDay,
 } from "./quota";
 
-const LAST_SECOND_OF_DAY = Date.parse("2026-09-26T16:59:59Z"); // 23:59:59 WIB, 26 Sept
-const MIDNIGHT = Date.parse("2026-09-26T17:00:00Z"); // 00:00 WIB, 27 Sept
+const LAST_SECOND_OF_DAY = Date.parse("2026-09-26T15:59:59Z"); // 23:59:59 GMT+8, 26 Sept
+const MIDNIGHT = Date.parse("2026-09-26T16:00:00Z"); // 00:00 GMT+8, 27 Sept
 
-describe("WIB day and reset", () => {
-  it("uses UTC+7 for the day and resets at 00:00 WIB", () => {
-    expect(wibDay(LAST_SECOND_OF_DAY)).toBe("2026-09-26");
-    expect(formatWib(nextResetMs(LAST_SECOND_OF_DAY))).toBe("2026-09-27T00:00:00+07:00");
-    expect(wibDay(MIDNIGHT)).toBe("2026-09-27");
-    expect(formatWib(nextResetMs(MIDNIGHT))).toBe("2026-09-28T00:00:00+07:00");
+describe("GMT+8 day and reset (DELTA-50)", () => {
+  it("uses GMT+8 for the day and resets at 00:00 GMT+8", () => {
+    expect(quotaDay(LAST_SECOND_OF_DAY)).toBe("2026-09-26");
+    expect(quotaIso(nextResetMs(LAST_SECOND_OF_DAY))).toBe("2026-09-27T00:00:00+08:00");
+    expect(quotaDay(MIDNIGHT)).toBe("2026-09-27");
+    expect(quotaIso(nextResetMs(MIDNIGHT))).toBe("2026-09-28T00:00:00+08:00");
   });
 });
 
 describe("quotaKey", () => {
-  it("holds the WIB date and an HMAC, never the IP itself", () => {
+  it("holds the GMT+8 date and an HMAC, never the IP itself", () => {
     const key = quotaKey("secret-a", "203.0.113.7", LAST_SECOND_OF_DAY);
 
     expect(key).toMatch(/^quota:v1:2026-09-26:[0-9a-f]{64}$/);
@@ -75,7 +75,7 @@ describe("memory store", () => {
       limit: 10,
       used: 0,
       remaining: 10,
-      resetsAt: "2026-09-27T00:00:00+07:00",
+      resetsAt: "2026-09-27T00:00:00+08:00",
     });
     await recordAnalysis(store, key, 10, clock);
     expect(await recordAnalysis(store, key, 10, clock)).toMatchObject({ used: 2, remaining: 8 });
@@ -92,9 +92,9 @@ describe("memory store", () => {
 });
 
 describe("hourly request window (rules.md §4.3.6)", () => {
-  const TEN_PAST_TWO = Date.parse("2026-09-26T07:10:00Z"); // 14:10 WIB
+  const TEN_PAST_TWO = Date.parse("2026-09-26T06:10:00Z"); // 14:10 GMT+8
 
-  it("keys the counter by WIB hour and HMAC, never by the IP", () => {
+  it("keys the counter by GMT+8 hour and HMAC, never by the IP", () => {
     const key = requestKey("secret-a", "203.0.113.7", TEN_PAST_TWO);
 
     expect(key).toMatch(/^requests:v1:2026-09-26T14:[0-9a-f]{64}$/);
@@ -108,9 +108,9 @@ describe("hourly request window (rules.md §4.3.6)", () => {
     const store = createMemoryStore(() => clock);
     const key = requestKey("secret", "198.51.100.1", clock);
 
-    expect(formatWib(nextHourMs(clock))).toBe("2026-09-26T15:00:00+07:00");
+    expect(quotaIso(nextHourMs(clock))).toBe("2026-09-26T15:00:00+08:00");
     for (let i = 0; i < 2; i++) {
-      expect(await recordRequest(store, key, 2, clock)).toEqual({ allowed: true, resetsAt: "2026-09-26T15:00:00+07:00" });
+      expect(await recordRequest(store, key, 2, clock)).toEqual({ allowed: true, resetsAt: "2026-09-26T15:00:00+08:00" });
     }
     expect((await recordRequest(store, key, 2, clock)).allowed).toBe(false);
 

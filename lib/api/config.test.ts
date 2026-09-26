@@ -12,6 +12,7 @@ describe("readConfig", () => {
       hourlyRequestLimit: 20,
       quotaSecret: null,
       upstash: null,
+      allowPrivateEndpoints: false,
       production: false,
     });
   });
@@ -27,6 +28,7 @@ describe("readConfig", () => {
       QUOTA_HASH_SECRET: "secret",
       UPSTASH_REDIS_REST_URL: "https://db.upstash.io/",
       UPSTASH_REDIS_REST_TOKEN: "token",
+      ALLOW_PRIVATE_ENDPOINTS: " TRUE ",
       NODE_ENV: "production",
     });
 
@@ -39,8 +41,16 @@ describe("readConfig", () => {
       hourlyRequestLimit: 30,
       quotaSecret: "secret",
       upstash: { url: "https://db.upstash.io", token: "token" },
+      allowPrivateEndpoints: true,
       production: true,
     });
+  });
+
+  it("keeps private endpoints off for anything but an explicit yes", () => {
+    for (const value of ["", "false", "0", "yes please"]) {
+      expect(readConfig({ ALLOW_PRIVATE_ENDPOINTS: value }).allowPrivateEndpoints).toBe(false);
+    }
+    expect(readConfig({ ALLOW_PRIVATE_ENDPOINTS: "1" }).allowPrivateEndpoints).toBe(true);
   });
 
   it("ignores numbers that are not positive integers", () => {

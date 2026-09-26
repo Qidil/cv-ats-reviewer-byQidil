@@ -52,6 +52,9 @@ export interface Suggestion {
 
 export type AnalysisMode = "mode-a" | "mode-b";
 
+/** FEAT-03 (AC-03.1): Mode B lists exactly this many roles, the best match first. */
+export const SUGGESTED_JOB_COUNT = 5;
+
 export interface SuggestedJob {
   title: string;
   matchScore: number;

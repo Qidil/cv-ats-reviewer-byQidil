@@ -20,6 +20,8 @@ export interface AnalyzeConfig {
   hourlyRequestLimit: number;
   quotaSecret: string | null;
   upstash: { url: string; token: string } | null;
+  /** ADR-009: custom endpoints may use plain HTTP and private or loopback hosts. Off unless set to true. */
+  allowPrivateEndpoints: boolean;
   production: boolean;
 }
 
@@ -52,6 +54,7 @@ export function readConfig(env: Env = process.env): AnalyzeConfig {
     hourlyRequestLimit: positiveInteger(env.HOURLY_REQUEST_LIMIT, DEFAULT_HOURLY_REQUEST_LIMIT),
     quotaSecret: text(env, "QUOTA_HASH_SECRET"),
     upstash: url && token ? { url: url.replace(/\/+$/, ""), token } : null,
+    allowPrivateEndpoints: /^(true|1)$/i.test(env.ALLOW_PRIVATE_ENDPOINTS?.trim() ?? ""),
     production: env.NODE_ENV === "production",
   };
 }

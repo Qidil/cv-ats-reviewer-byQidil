@@ -2,6 +2,7 @@ import { classifyRunVisibility, cleanRunText, isOcrLayerPage, summarizeHiddenTex
 import { assembleText, buildLayout, buildTypography, parseFontName, type LayoutRun } from "./layout";
 import { loadPdfjs, toPdfExtractionError, type PdfPage } from "./pdfjs";
 import {
+  MAX_IMAGE_PIXELS,
   MAX_PDF_BYTES,
   MAX_PDF_PAGES,
   MIN_VISIBLE_CHARS,
@@ -20,11 +21,6 @@ const PDF_HEADER = "%PDF-";
 const HEADER_SEARCH_BYTES = 1024;
 /** Below this share of pdf.js text content the operator walk is assumed to have failed. */
 const FALLBACK_TEXT_RATIO = 0.5;
-/**
- * pdf.js decodes every image in-process while building the operator list. Larger images are
- * dropped before decoding, which bounds memory per image; a 400 dpi A4 scan still fits.
- */
-const MAX_IMAGE_PIXELS = 25_000_000;
 /**
  * The background search costs runs × shapes per page, so crafted pages are rejected. A dense
  * one-page CV has about 5,000 glyphs and a few hundred shapes.

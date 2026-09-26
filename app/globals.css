@@ -45,6 +45,17 @@
   --text-code: 0.8125rem;
   --text-code--line-height: 1.25rem;
   --text-code--font-weight: 500;
+
+  --animate-skeleton: skeleton 1.6s linear infinite;
+  @keyframes skeleton {
+    0%,
+    100% {
+      opacity: 0.4;
+    }
+    50% {
+      opacity: 0.8;
+    }
+  }
 }
 
 /* --font-inter is set on <html> by next/font, so it must resolve at use time. */
@@ -55,6 +66,8 @@
 @layer base {
   html {
     color-scheme: dark;
+    /* The page grows past the viewport when an analysis starts; a reserved gutter keeps the layout from shifting (G-11). */
+    scrollbar-gutter: stable;
   }
 
   body {

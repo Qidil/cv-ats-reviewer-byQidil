@@ -86,15 +86,26 @@ describe("parseAiReport extraction", () => {
 
 describe("cleanAiText (BR-07)", () => {
   it.each([
-    ["**Contoh:** Ubah kalimat itu.", "Misalnya, Ubah kalimat itu."],
+    ["**Contoh:** Ubah kalimat itu.", "Ubah kalimat itu."],
     ["Tambahkan metrik. Contoh: meningkatkan penjualan.", "Tambahkan metrik. Misalnya, meningkatkan penjualan."],
-    ["Pakai istilah seperti contoh : TypeScript.", "Pakai istilah seperti misalnya, TypeScript."],
+    ["Pakai istilah seperti contoh : TypeScript.", "Pakai istilah seperti TypeScript."],
     ["Bagian **Keahlian** kurang lengkap.", "Bagian Keahlian kurang lengkap."],
     ["Ringkasan terlalu umum \u2014 sebut bidangnya.", "Ringkasan terlalu umum, sebut bidangnya."],
     ["Periode 2019\u20132021 tetap utuh.", "Periode 2019\u20132021 tetap utuh."],
     ["Contohnya ada di bagian Pengalaman.", "Contohnya ada di bagian Pengalaman."],
-  ])("rewrites %j", (input, expected) => {
-    expect(cleanAiText(input)).toBe(expected);
+  ])("rewrites Indonesian %j", (input, expected) => {
+    expect(cleanAiText(input, "id")).toBe(expected);
+  });
+
+  it.each([
+    ["**Example:** Change the bullet.", "Change the bullet."],
+    ["Add a metric. Example: raised sales.", "Add a metric. For example, raised sales."],
+    ["Use terms such as examples: TypeScript.", "Use terms such as TypeScript."],
+    ["Add a metric. For example: raised sales.", "Add a metric. For example, raised sales."],
+    ["The summary is vague \u2014 name the field.", "The summary is vague, name the field."],
+    ["The examples in Experience are clear.", "The examples in Experience are clear."],
+  ])("rewrites English %j", (input, expected) => {
+    expect(cleanAiText(input, "en")).toBe(expected);
   });
 
   it("cleans every piece of AI prose but keeps the snippet verbatim", () => {
@@ -106,9 +117,13 @@ describe("cleanAiText (BR-07)", () => {
         ],
         weaknesses: ["Contoh: bullet tanpa angka."],
         suggestions: [{ ...SUGGESTION, title: "**Tambah angka**", targetTextSnippet: "Tim **inti** \u2014 5 orang" }],
-        suggestedJobs: [{ ...JOB, reason: "Contoh: membangun API." }],
+        suggestedJobs: [
+          { ...JOB, matchScore: 90, reason: "Contoh: membangun API." },
+          ...[80, 70, 60, 50].map((matchScore) => ({ ...JOB, title: `Posisi ${matchScore}`, matchScore })),
+        ],
       }),
       "mode-b",
+      "id",
     );
 
     expect(report.checks.keyword?.detail).toBe("Cukup, dua istilah hilang.");
@@ -116,6 +131,20 @@ describe("cleanAiText (BR-07)", () => {
     expect(report.suggestions[0].title).toBe("Tambah angka");
     expect(report.suggestions[0].targetTextSnippet).toBe("Tim **inti** \u2014 5 orang");
     expect(report.suggestedJobs[0].reason).toBe("Misalnya, membangun API.");
+  });
+
+  it("cleans English prose with the English labels", () => {
+    const report = parseAiReport(
+      JSON.stringify({
+        atsChecks: [{ id: "keyword", score: 70, detail: "Example: two terms are missing." }],
+        weaknesses: [],
+        suggestions: [],
+      }),
+      "mode-a",
+      "en",
+    );
+
+    expect(report.checks.keyword?.detail).toBe("For example, two terms are missing.");
   });
 });
 
@@ -164,16 +193,22 @@ describe("parseAiReport normalization", () => {
     expect(report.suggestions[1].category).toBe("general");
   });
 
-  it("requires the AI's keyword and skills scores and at least one job in Mode B", () => {
-    const withJobs = { ...MODE_A_REPORT, suggestedJobs: [JOB] };
+  it("requires the AI's keyword and skills scores and all 5 roles in Mode B (AC-03.1)", () => {
+    const fiveJobs = [88, 80, 72, 65, 60].map((matchScore, index) => ({ ...JOB, title: `Role ${index + 1}`, matchScore }));
+    const withJobs = { ...MODE_A_REPORT, suggestedJobs: fiveJobs };
     const withoutSkills = { ...withJobs, atsChecks: CHECKS.filter((check) => check.id !== "skills") };
+    const fourJobs = { ...withJobs, suggestedJobs: fiveJobs.slice(0, 4) };
+    const oneWithoutReason = { ...withJobs, suggestedJobs: fiveJobs.map((job, index) => (index === 2 ? { ...job, reason: " " } : job)) };
 
-    expect(parseAiReport(JSON.stringify(withJobs), "mode-b").suggestedJobs).toEqual([JOB]);
+    expect(parseAiReport(JSON.stringify(withJobs), "mode-b").suggestedJobs).toEqual(fiveJobs);
     expect(reasonOf(() => parseAiReport(JSON.stringify(MODE_A_REPORT), "mode-b"))).toBe("incomplete");
     expect(reasonOf(() => parseAiReport(JSON.stringify(withoutSkills), "mode-b"))).toBe("incomplete");
+    expect(reasonOf(() => parseAiReport(JSON.stringify(fourJobs), "mode-b"))).toBe("incomplete");
+    // G-08: a role without a reason cannot explain the fit, so it does not count toward the 5.
+    expect(reasonOf(() => parseAiReport(JSON.stringify(oneWithoutReason), "mode-b"))).toBe("incomplete");
   });
 
-  it("sorts jobs by match score and drops jobs without a title or score", () => {
+  it("keeps the 5 best-matching roles, best first, and drops roles without a title or score", () => {
     const report = parseAiReport(
       JSON.stringify({
         ...MODE_A_REPORT,
@@ -182,11 +217,22 @@ describe("parseAiReport normalization", () => {
           { ...JOB, title: "Backend Engineer", matchScore: 88 },
           { ...JOB, title: "" },
           { ...JOB, title: "Tanpa skor", matchScore: null },
+          { ...JOB, title: "QA Engineer", matchScore: 55 },
+          { ...JOB, title: "Frontend Engineer", matchScore: 75 },
+          { ...JOB, title: "DevOps Engineer", matchScore: 70 },
+          { ...JOB, title: "Support Engineer", matchScore: 40 },
+          { ...JOB, title: "Platform Engineer", matchScore: 70 },
         ],
       }),
       "mode-b",
     );
 
-    expect(report.suggestedJobs.map((job) => job.title)).toEqual(["Backend Engineer", "Data Engineer"]);
+    expect(report.suggestedJobs.map((job) => job.title)).toEqual([
+      "Backend Engineer",
+      "Frontend Engineer",
+      "DevOps Engineer",
+      "Platform Engineer",
+      "Data Engineer",
+    ]);
   });
 });

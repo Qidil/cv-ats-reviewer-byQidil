@@ -1,8 +1,8 @@
 import { createHmac } from "node:crypto";
 import { isIPv6 } from "node:net";
 
-/** Asia/Jakarta has no daylight saving time, so WIB is always UTC+7. */
-const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
+/** DELTA-50: the quota day runs on GMT+8 (Asia/Makassar), which has no daylight saving time. */
+const QUOTA_OFFSET_MS = 8 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 /** EXPIREAT is absolute, so an hour of slack keeps a store whose clock runs ahead from dropping a count before its window ends. */
@@ -26,26 +26,26 @@ export interface QuotaStatus {
   limit: number;
   used: number;
   remaining: number;
-  /** ISO 8601 with the +07:00 offset. */
+  /** ISO 8601 with the +08:00 offset. */
   resetsAt: string;
 }
 
-export function wibDay(nowMs: number): string {
-  return new Date(nowMs + WIB_OFFSET_MS).toISOString().slice(0, 10);
+export function quotaDay(nowMs: number): string {
+  return new Date(nowMs + QUOTA_OFFSET_MS).toISOString().slice(0, 10);
 }
 
-/** The next 00:00 WIB, in UTC milliseconds. */
+/** The next 00:00 GMT+8, in UTC milliseconds. */
 export function nextResetMs(nowMs: number): number {
-  return Math.floor((nowMs + WIB_OFFSET_MS) / DAY_MS) * DAY_MS + DAY_MS - WIB_OFFSET_MS;
+  return Math.floor((nowMs + QUOTA_OFFSET_MS) / DAY_MS) * DAY_MS + DAY_MS - QUOTA_OFFSET_MS;
 }
 
-/** The start of the next clock hour, in UTC milliseconds. WIB is a whole-hour offset, so both share hour boundaries. */
+/** The start of the next clock hour, in UTC milliseconds. GMT+8 is a whole-hour offset, so both share hour boundaries. */
 export function nextHourMs(nowMs: number): number {
   return Math.floor(nowMs / HOUR_MS) * HOUR_MS + HOUR_MS;
 }
 
-export function formatWib(ms: number): string {
-  return `${new Date(ms + WIB_OFFSET_MS).toISOString().slice(0, 19)}+07:00`;
+export function quotaIso(ms: number): string {
+  return `${new Date(ms + QUOTA_OFFSET_MS).toISOString().slice(0, 19)}+08:00`;
 }
 
 /** Eight 16-bit groups of an address that passed isIPv6; a dotted IPv4 tail becomes the last two groups. */
@@ -89,20 +89,20 @@ function clientHash(secret: string, clientIp: string): string {
   return createHmac("sha256", secret).update(clientNetwork(clientIp)).digest("hex");
 }
 
-/** rules.md §4.3.4: only an HMAC of the client's network is stored, next to the WIB date. */
+/** rules.md §4.3.4: only an HMAC of the client's network is stored, next to the GMT+8 date. */
 export function quotaKey(secret: string, clientIp: string, nowMs: number): string {
-  return `quota:v1:${wibDay(nowMs)}:${clientHash(secret, clientIp)}`;
+  return `quota:v1:${quotaDay(nowMs)}:${clientHash(secret, clientIp)}`;
 }
 
-/** rules.md §4.3.6: the hourly counter uses the same HMAC, next to the WIB hour. */
+/** rules.md §4.3.6: the hourly counter uses the same HMAC, next to the GMT+8 hour. */
 export function requestKey(secret: string, clientIp: string, nowMs: number): string {
-  const hour = new Date(nowMs + WIB_OFFSET_MS).toISOString().slice(0, 13);
+  const hour = new Date(nowMs + QUOTA_OFFSET_MS).toISOString().slice(0, 13);
   return `requests:v1:${hour}:${clientHash(secret, clientIp)}`;
 }
 
 export interface RequestWindow {
   allowed: boolean;
-  /** ISO 8601 with the +07:00 offset: the start of the next hour. */
+  /** ISO 8601 with the +08:00 offset: the start of the next hour. */
   resetsAt: string;
 }
 
@@ -114,11 +114,11 @@ export async function recordRequest(
 ): Promise<RequestWindow> {
   const resetMs = nextHourMs(nowMs);
   const count = await store.increment(key, Math.floor(resetMs / 1000) + EXPIRY_MARGIN_S);
-  return { allowed: count <= limit, resetsAt: formatWib(resetMs) };
+  return { allowed: count <= limit, resetsAt: quotaIso(resetMs) };
 }
 
 function toStatus(limit: number, used: number, nowMs: number): QuotaStatus {
-  return { limit, used, remaining: Math.max(0, limit - used), resetsAt: formatWib(nextResetMs(nowMs)) };
+  return { limit, used, remaining: Math.max(0, limit - used), resetsAt: quotaIso(nextResetMs(nowMs)) };
 }
 
 export async function readQuota(store: QuotaStore, key: string, limit: number, nowMs: number): Promise<QuotaStatus> {

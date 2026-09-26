@@ -1,4 +1,5 @@
-import type { GraphicKind, HiddenReason, PdfMetadata } from "@/lib/pdf/types";
+import { DEFAULT_LANGUAGE, type Language } from "@/lib/i18n/language";
+import type { PdfMetadata } from "@/lib/pdf/types";
 import {
   ATS_CHECK_IDS,
   ATS_CHECK_WEIGHTS,
@@ -9,6 +10,7 @@ import {
   type Suggestion,
   type SuggestionPriority,
 } from "@/types/ats";
+import { RUBRIC_TEXT, type RubricSection, type RubricText } from "./rubric-text";
 import { stripIgnored } from "./white-text";
 
 export interface DeterministicReport {
@@ -18,25 +20,14 @@ export interface DeterministicReport {
   suggestions: Suggestion[];
 }
 
-export const CHECK_NAMES: Readonly<Record<AtsCheckId, string>> = {
-  keyword: "Kesesuaian Kata Kunci",
-  skills: "Cakupan Keahlian",
-  sections: "Kelengkapan Bagian CV",
-  formatting: "Format & Keamanan Parsing",
-  quantified: "Pencapaian Terukur",
-  readability: "Keterbacaan & Struktur Teks",
+export const CHECK_NAMES: Readonly<Record<Language, Readonly<Record<AtsCheckId, string>>>> = {
+  en: RUBRIC_TEXT.en.checkNames,
+  id: RUBRIC_TEXT.id.checkNames,
 };
 
-type Section = "summary" | "experience" | "education" | "skills";
+type Section = RubricSection;
 
 const SECTIONS: readonly Section[] = ["summary", "experience", "education", "skills"];
-
-const SECTION_LABELS: Readonly<Record<Section, string>> = {
-  summary: "Ringkasan",
-  experience: "Pengalaman",
-  education: "Pendidikan",
-  skills: "Keahlian",
-};
 
 const SECTION_HEADINGS: Readonly<Record<Section, readonly string[]>> = {
   summary: [
@@ -126,6 +117,7 @@ const YEAR_RANGE = /\b(?:19|20)\d{2}\s*[-/\u2013\u2014]\s*(?:(?:19|20)\d{2}|seka
 const PHONE_CANDIDATE = /\+?\d[\d\s().-]{7,}\d/g;
 
 interface CheckContext {
+  t: RubricText;
   cv: string;
   cvLower: string;
   jdLower: string;
@@ -265,19 +257,19 @@ function hasPhoneNumber(cv: string): boolean {
   return candidates.some((candidate) => candidate.replace(/\D/g, "").length >= PHONE_MIN_DIGITS);
 }
 
-function lengthIssue(): string {
-  return `panjang CV di luar ${WORDS_MIN} sampai ${formatNumber(WORDS_MAX)} kata`;
+function formatNumber(value: number, t: RubricText): string {
+  return value.toLocaleString(t.numberLocale, { maximumFractionDigits: 2 });
 }
 
-function formatList(items: readonly string[]): string {
+function lengthIssue(t: RubricText): string {
+  return t.lengthIssue(WORDS_MIN, formatNumber(WORDS_MAX, t));
+}
+
+function formatList(items: readonly string[], t: RubricText): string {
   if (items.length <= MISSING_LIST_LIMIT) {
     return items.join(", ");
   }
-  return `${items.slice(0, MISSING_LIST_LIMIT).join(", ")}, dan ${items.length - MISSING_LIST_LIMIT} lainnya`;
-}
-
-function formatNumber(value: number): string {
-  return value.toLocaleString("id-ID", { maximumFractionDigits: 2 });
+  return t.moreItems(items.slice(0, MISSING_LIST_LIMIT).join(", "), items.length - MISSING_LIST_LIMIT);
 }
 
 export function statusFor(score: number): AtsCheckStatus {
@@ -296,16 +288,23 @@ export function computeWeightedScore(checks: readonly AtsCheck[]): number {
   return Math.round(known.reduce((sum, check) => sum + check.score * ATS_CHECK_WEIGHTS[check.id], 0) / totalWeight);
 }
 
-function makeCheck(id: AtsCheckId, score: number, detail: string, status: AtsCheckStatus = statusFor(score)): AtsCheck {
-  return { id, name: CHECK_NAMES[id], status, score, detail };
+function makeCheck(
+  ctx: CheckContext,
+  id: AtsCheckId,
+  score: number,
+  detail: string,
+  status: AtsCheckStatus = statusFor(score),
+): AtsCheck {
+  return { id, name: ctx.t.checkNames[id], status, score, detail };
 }
 
-function buildContext(cv: string, jd: string): CheckContext {
+function buildContext(cv: string, jd: string, t: RubricText): CheckContext {
   const cvLower = cv.toLowerCase();
   const jdLower = jd.toLowerCase();
   const bullets = extractBullets(cv);
   const achievements = extractAchievementBullets(cv);
   return {
+    t,
     cv,
     cvLower,
     jdLower,
@@ -321,11 +320,12 @@ function buildContext(cv: string, jd: string): CheckContext {
 }
 
 function checkKeyword(ctx: CheckContext): AtsCheck {
+  const text = ctx.t.keyword;
   if (ctx.modeB) {
-    return makeCheck("keyword", 0, "Tanpa deskripsi pekerjaan (Mode B), kecocokan kata kunci dinilai oleh AI.", "warn");
+    return makeCheck(ctx, "keyword", 0, text.withoutJob, "warn");
   }
   if (ctx.keywords.length === 0) {
-    return makeCheck("keyword", 0, "Deskripsi pekerjaan terlalu pendek untuk diambil kata kuncinya.", "fail");
+    return makeCheck(ctx, "keyword", 0, text.jobTooShort, "fail");
   }
   const matched = ctx.keywords.filter((keyword) => hasKeyword(ctx.cvLower, keyword));
   const missing = ctx.keywords.filter((keyword) => !matched.includes(keyword));
@@ -335,33 +335,28 @@ function checkKeyword(ctx: CheckContext): AtsCheck {
     return sum + 1;
   }, 0);
   const score = Math.min(100, Math.round((earned / (ctx.keywords.length * PLACEMENT_SKILLS)) * 100));
-  const detail =
-    missing.length === 0
-      ? `Semua ${matched.length} kata kunci dan frasa dari deskripsi pekerjaan ada di CV.`
-      : `Belum ada di CV: ${formatList(missing)}.`;
-  return makeCheck("keyword", score, detail);
+  const detail = missing.length === 0 ? text.allFound(matched.length) : text.missing(formatList(missing, ctx.t));
+  return makeCheck(ctx, "keyword", score, detail);
 }
 
 function checkSkills(ctx: CheckContext): AtsCheck {
+  const text = ctx.t.skills;
   if (ctx.modeB) {
-    return makeCheck("skills", 0, "Tanpa deskripsi pekerjaan (Mode B), cakupan keahlian dinilai oleh AI.", "warn");
+    return makeCheck(ctx, "skills", 0, text.withoutJob, "warn");
   }
   if (!ctx.sections.skills || ctx.skillsText.trim() === "") {
-    return makeCheck("skills", 0, "Bagian Keahlian tidak ditemukan di CV.", "fail");
+    return makeCheck(ctx, "skills", 0, text.noSection, "fail");
   }
   if (ctx.keywords.length === 0) {
-    return makeCheck("skills", 0, "Deskripsi pekerjaan terlalu pendek untuk menilai cakupan keahlian.", "fail");
+    return makeCheck(ctx, "skills", 0, text.jobTooShort, "fail");
   }
   const matched = ctx.keywords.filter((keyword) => hasKeyword(ctx.skillsText, keyword));
   const missing = ctx.keywords.filter((keyword) => !matched.includes(keyword));
   const items = countSkillItems(ctx.skillsText);
   const bonus = items >= 15 ? SKILL_BONUS_MANY : items >= 10 ? SKILL_BONUS_SOME : 0;
   const score = Math.min(100, Math.round((matched.length / ctx.keywords.length) * 100) + bonus);
-  const detail =
-    missing.length === 0
-      ? `Semua kata kunci dari deskripsi pekerjaan tercantum di bagian Keahlian (${matched.length}).`
-      : `Bagian Keahlian belum memuat: ${formatList(missing)}.`;
-  return makeCheck("skills", score, detail);
+  const detail = missing.length === 0 ? text.allFound(matched.length) : text.missing(formatList(missing, ctx.t));
+  return makeCheck(ctx, "skills", score, detail);
 }
 
 function checkSections(ctx: CheckContext): AtsCheck {
@@ -369,18 +364,13 @@ function checkSections(ctx: CheckContext): AtsCheck {
   const score = Math.round(((SECTIONS.length - missing.length) / SECTIONS.length) * 100);
   const detail =
     missing.length === 0
-      ? "Keempat bagian standar ada: Ringkasan, Pengalaman, Pendidikan, dan Keahlian."
-      : `Bagian yang belum ada: ${missing.map((section) => SECTION_LABELS[section]).join(", ")}.`;
-  return makeCheck("sections", score, detail);
+      ? ctx.t.sections.allPresent
+      : ctx.t.sections.missing(missing.map((section) => ctx.t.sectionLabels[section]).join(", "));
+  return makeCheck(ctx, "sections", score, detail);
 }
 
-const GRAPHIC_LABELS: Readonly<Record<GraphicKind, string>> = {
-  bar: "bar keahlian atau grafik",
-  image: "gambar atau foto",
-  shading: "latar gradasi",
-};
-
 function checkFormatting(ctx: CheckContext, metadata: PdfMetadata | null, typographySummary: string): AtsCheck {
+  const text = ctx.t.formatting;
   const hasEmail = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i.test(ctx.cv);
   const hasPhone = hasPhoneNumber(ctx.cv);
   const hasBullets = ctx.bullets.length > 0;
@@ -388,68 +378,60 @@ function checkFormatting(ctx: CheckContext, metadata: PdfMetadata | null, typogr
   let score = Math.round(([hasEmail, hasPhone, hasBullets, reasonableLength].filter(Boolean).length / 4) * 100);
 
   const issues: string[] = [];
-  if (!hasEmail) issues.push("belum ada email");
-  if (!hasPhone) issues.push("belum ada nomor telepon");
-  if (!hasBullets) issues.push("belum ada bullet point");
-  if (!reasonableLength) issues.push(lengthIssue());
+  if (!hasEmail) issues.push(text.noEmail);
+  if (!hasPhone) issues.push(text.noPhone);
+  if (!hasBullets) issues.push(text.noBullets);
+  if (!reasonableLength) issues.push(lengthIssue(ctx.t));
 
   const lines = ctx.cv.split("\n");
   if (hasTable(lines)) {
     score = Math.max(0, score - TABLE_PENALTY);
-    issues.push("ada tabel atau teks berkolom dengan tanda |");
+    issues.push(text.table);
   }
   if (lines.filter((line) => line.includes("\t")).length >= 2) {
     score = Math.max(0, score - TAB_PENALTY);
-    issues.push("ada tata letak dengan tab");
+    issues.push(text.tabs);
   }
 
   const layout = metadata?.layout ?? null;
   if (layout !== null) {
     if (layout.columnCount >= 2) {
       score = Math.max(0, score - LAYOUT_PENALTY);
-      issues.push("tata letak 2 kolom");
+      issues.push(text.twoColumns);
     }
     if (layout.hasGraphics) {
       score = Math.max(0, score - LAYOUT_PENALTY);
-      issues.push(`ada grafis yang tidak terbaca ATS (${layout.graphics.map((kind) => GRAPHIC_LABELS[kind]).join(", ")})`);
+      issues.push(text.graphics(layout.graphics.map((kind) => ctx.t.graphicLabels[kind]).join(", ")));
     }
   }
 
   const notApplicable = metadata === null || metadata.typography === null || metadata.layout === null;
-  const sentences = [
-    issues.length === 0
-      ? "Mudah dibaca ATS: ada email, nomor telepon, bullet point, dan panjang CV wajar."
-      : `Perlu diperbaiki: ${issues.join(", ")}.`,
-  ];
+  const sentences = [issues.length === 0 ? text.ok : ctx.t.needsFixing(issues.join(", "))];
   if (notApplicable) {
-    sentences.push("Tipografi dan tata letak tidak dapat dinilai untuk PDF ini.");
+    sentences.push(text.typographyUnavailable);
   }
   if (metadata?.hiddenText.hasWords) {
-    sentences.push("Ada teks yang tidak terlihat di PDF. Teks itu tidak ikut dianalisis dan tidak memengaruhi skor.");
+    sentences.push(text.hiddenText);
   }
   if (metadata && !metadata.hiddenText.checked) {
-    sentences.push("Teks tersembunyi tidak dapat diperiksa untuk PDF ini.");
+    sentences.push(text.hiddenUnchecked);
   }
   if (layout !== null && layout.ocrPages.length > 0) {
-    sentences.push("CV ini hasil scan dengan teks OCR, jadi hasil baca ATS bisa kurang akurat.");
+    sentences.push(text.ocr);
   }
   if (typographySummary !== "") {
     sentences.push(typographySummary);
   }
-  return makeCheck("formatting", score, sentences.join(" "), notApplicable ? "warn" : statusFor(score));
+  return makeCheck(ctx, "formatting", score, sentences.join(" "), notApplicable ? "warn" : statusFor(score));
 }
 
 function checkQuantified(ctx: CheckContext): AtsCheck {
   if (ctx.achievements.length === 0) {
-    return makeCheck("quantified", 0, "Tidak ada bullet point yang bisa dinilai angkanya.");
+    return makeCheck(ctx, "quantified", 0, ctx.t.quantified.noBullets);
   }
   const quantified = ctx.achievements.filter((bullet) => /\d/.test(bullet));
   const score = Math.round((quantified.length / ctx.achievements.length) * 100);
-  return makeCheck(
-    "quantified",
-    score,
-    `${quantified.length} dari ${ctx.achievements.length} bullet point memuat angka atau metrik.`,
-  );
+  return makeCheck(ctx, "quantified", score, ctx.t.quantified.count(quantified.length, ctx.achievements.length));
 }
 
 function checkReadability(ctx: CheckContext): AtsCheck {
@@ -464,15 +446,12 @@ function checkReadability(ctx: CheckContext): AtsCheck {
   const score = Math.round(([hasSummary, hasBullets, conciseBullets, reasonableLength].filter(Boolean).length / 4) * 100);
 
   const issues: string[] = [];
-  if (!hasSummary) issues.push("belum ada ringkasan profesional");
-  if (!hasBullets) issues.push("belum ada bullet point");
-  if (!conciseBullets) issues.push("bullet point terlalu panjang");
-  if (!reasonableLength) issues.push(lengthIssue());
-  const detail =
-    issues.length === 0
-      ? "Mudah dibaca: ada ringkasan, bullet point ringkas, dan panjang CV wajar."
-      : `Perlu diperbaiki: ${issues.join(", ")}.`;
-  return makeCheck("readability", score, detail);
+  if (!hasSummary) issues.push(ctx.t.readability.noSummary);
+  if (!hasBullets) issues.push(ctx.t.formatting.noBullets);
+  if (!conciseBullets) issues.push(ctx.t.readability.longBullets);
+  if (!reasonableLength) issues.push(lengthIssue(ctx.t));
+  const detail = issues.length === 0 ? ctx.t.readability.ok : ctx.t.needsFixing(issues.join(", "));
+  return makeCheck(ctx, "readability", score, detail);
 }
 
 function priorityFor(score: number): SuggestionPriority {
@@ -487,49 +466,25 @@ function snippet(text: string): string {
 
 function checkSuggestion(check: AtsCheck, ctx: CheckContext): Omit<Suggestion, "id"> {
   const priority = priorityFor(check.score);
+  const text = ctx.t.suggestions;
   switch (check.id) {
     case "keyword":
-      return {
-        title: "Pakai istilah dari deskripsi pekerjaan",
-        description: `Tulis istilah dari deskripsi pekerjaan persis seperti aslinya di bagian Ringkasan, Keahlian, dan Pengalaman. ${check.detail}`,
-        category: "keywords",
-        priority,
-      };
+      return { title: text.keyword.title, description: text.keyword.description(check.detail), category: "keywords", priority };
     case "skills":
-      return {
-        title: "Lengkapi bagian Keahlian",
-        description: `Cantumkan setiap keahlian yang diminta deskripsi pekerjaan minimal sekali di bagian Keahlian. ${check.detail}`,
-        category: "skills",
-        priority,
-      };
+      return { title: text.skills.title, description: text.skills.description(check.detail), category: "skills", priority };
     case "sections":
-      return {
-        title: "Tambahkan bagian CV yang belum ada",
-        description: `Pakai judul bagian yang umum: Ringkasan, Pengalaman, Pendidikan, dan Keahlian. ${check.detail}`,
-        category: "structure",
-        priority,
-      };
+      return { title: text.sections.title, description: text.sections.description(check.detail), category: "structure", priority };
     case "formatting":
-      return {
-        title: "Rapikan format agar terbaca ATS",
-        description: `Ubah bagian yang berisiko gagal dibaca ATS. ${check.detail}`,
-        category: "format",
-        priority,
-      };
+      return { title: text.formatting.title, description: text.formatting.description(check.detail), category: "format", priority };
     case "quantified": {
       const plain = ctx.achievements.find((bullet) => !/\d/.test(bullet));
       if (plain === undefined) {
-        return {
-          title: "Tambahkan angka pada pencapaian",
-          description: "Ganti uraian tugas dengan hasil yang terukur, misalnya persentase, jumlah, atau waktu.",
-          category: "achievements",
-          priority,
-        };
+        return { title: text.quantified.title, description: text.quantified.general, category: "achievements", priority };
       }
       const quote = snippet(plain);
       return {
-        title: "Tambahkan angka pada pencapaian",
-        description: `Ubah bullet point "${quote}" menjadi hasil yang terukur, misalnya persentase, jumlah, atau waktu.`,
+        title: text.quantified.title,
+        description: text.quantified.quote(quote),
         category: "achievements",
         priority,
         targetTextSnippet: quote,
@@ -537,34 +492,26 @@ function checkSuggestion(check: AtsCheck, ctx: CheckContext): Omit<Suggestion, "
     }
     case "readability":
       return {
-        title: "Ringkas kalimat dan bullet point",
-        description: `Buat ringkasan 2 sampai 4 baris dan jaga setiap bullet point di bawah 25 kata. ${check.detail}`,
+        title: text.readability.title,
+        description: text.readability.description(check.detail),
         category: "readability",
         priority,
       };
   }
 }
 
-const HIDDEN_REASON_PHRASES: Readonly<Record<HiddenReason, string>> = {
-  "low-contrast": "warnanya sama atau hampir sama dengan latar",
-  "invisible-mode": "dibuat tidak terlihat",
-  transparent: "dibuat transparan",
-  "tiny-font": "ukurannya 2 pt atau lebih kecil",
-  "off-page": "letaknya di luar halaman",
-};
-
 /** BR-02: hidden text never changes a score; the user is asked to delete it. */
-function hiddenTextSuggestion(metadata: PdfMetadata | null): Suggestion | null {
+function hiddenTextSuggestion(metadata: PdfMetadata | null, t: RubricText): Suggestion | null {
   const hidden = metadata?.hiddenText;
   if (!hidden?.hasWords) {
     return null;
   }
-  const phrases = [...new Set(hidden.reasons.map((reason) => HIDDEN_REASON_PHRASES[reason]))];
+  const phrases = [...new Set(hidden.reasons.map((reason) => t.hidden.reasons[reason]))];
   const first = hidden.samples[0];
   return {
     id: "hidden-text",
-    title: "Hapus teks yang tidak terlihat",
-    description: `PDF ini memuat teks yang tidak terlihat oleh pembaca: ${phrases.join(", ")}. Hapus teks itu dari file asli CV. Teks tersebut tidak ikut dianalisis di sini, tetapi tetap bisa terbaca oleh sistem ATS lain.`,
+    title: t.hidden.title,
+    description: t.hidden.description(phrases.join(", ")),
     category: "format",
     priority: "high",
     ...(first ? { targetTextSnippet: first.text, pageNumber: first.pageNumber } : {}),
@@ -577,11 +524,17 @@ export interface TypographyFindings {
 }
 
 /** Typography never lowers a score; it only produces suggestions and a formatting note. */
-export function deriveTypographyFindings(metadata: PdfMetadata | null): TypographyFindings {
+export function deriveTypographyFindings(
+  metadata: PdfMetadata | null,
+  language: Language = DEFAULT_LANGUAGE,
+): TypographyFindings {
   const typography = metadata?.typography;
   if (!typography) {
     return { suggestions: [], summary: "" };
   }
+  const t = RUBRIC_TEXT[language];
+  const text = t.typography;
+  const number = (value: number) => formatNumber(value, t);
   const suggestions: Suggestion[] = [];
   const notes: string[] = [];
   const add = (id: string, title: string, description: string, note: string, priority: SuggestionPriority = "low") => {
@@ -613,45 +566,36 @@ export function deriveTypographyFindings(metadata: PdfMetadata | null): Typograp
   if (families.length > 1) {
     add(
       "typo-font-count",
-      "Pakai satu jenis font",
-      `CV memakai ${families.length} font: ${families.join(", ")}. Pakai satu font untuk seluruh CV, lalu bedakan judul dengan ukuran dan huruf tebal.`,
-      `${families.length} jenis font`,
+      text.fontCount.title,
+      text.fontCount.description(families.length, families.join(", ")),
+      text.fontCount.note(families.length),
     );
   }
   if (outsideRecommended.length > 0) {
-    add(
-      "typo-font-family",
-      "Pakai Arial, Calibri, atau Helvetica",
-      `CV memakai font ${outsideRecommended.join(", ")}. Ganti dengan salah satu dari Arial, Calibri, atau Helvetica.`,
-      `font ${outsideRecommended.join(", ")}`,
-    );
+    const fonts = outsideRecommended.join(", ");
+    add("typo-font-family", text.fontFamily.title, text.fontFamily.description(fonts), text.fontFamily.note(fonts));
   }
   if (title !== null && (title < TITLE_SIZE_MIN || title > TITLE_SIZE_MAX)) {
     add(
       "typo-title-size",
-      "Sesuaikan ukuran nama atau judul",
-      `Ukuran nama atau judul sekarang ${formatNumber(title)} pt. Pakai 14 sampai 16 pt.`,
-      `judul ${formatNumber(title)} pt (ideal 14 sampai 16)`,
+      text.titleSize.title,
+      text.titleSize.description(number(title)),
+      text.titleSize.note(number(title)),
     );
   }
   if (body !== null && (body < BODY_SIZE_MIN || body > BODY_SIZE_MAX)) {
-    add(
-      "typo-body-size",
-      "Sesuaikan ukuran teks isi",
-      `Ukuran teks isi sekarang ${formatNumber(body)} pt. Pakai 10 sampai 12 pt, idealnya 10 atau 11 pt.`,
-      `isi ${formatNumber(body)} pt (ideal 10 sampai 12)`,
-    );
+    add("typo-body-size", text.bodySize.title, text.bodySize.description(number(body)), text.bodySize.note(number(body)));
   }
   if (
     typography.lineSpacing !== null &&
     (typography.lineSpacing < LINE_SPACING_MIN || typography.lineSpacing > LINE_SPACING_MAX)
   ) {
-    const spacing = typography.lineSpacing < LINE_SPACING_MIN ? "rapat" : "renggang";
+    const spacing = typography.lineSpacing < LINE_SPACING_MIN ? text.lineSpacing.tight : text.lineSpacing.loose;
     add(
       "typo-line-spacing",
-      "Atur jarak antarbaris",
-      `Jarak antarbaris CV terlalu ${spacing}. Atur spasi baris ke 1,0 sampai 1,15 di aplikasi pembuat CV.`,
-      `jarak baris terlalu ${spacing}`,
+      text.lineSpacing.title,
+      text.lineSpacing.description(spacing),
+      text.lineSpacing.note(spacing),
     );
   }
   if (typography.margins !== null) {
@@ -660,9 +604,9 @@ export function deriveTypographyFindings(metadata: PdfMetadata | null): Typograp
     if (![left, right, top, bottom].every(ideal)) {
       add(
         "typo-margins",
-        "Atur margin halaman",
-        `Margin terukur: kiri ${formatNumber(left)}, kanan ${formatNumber(right)}, atas ${formatNumber(top)}, bawah ${formatNumber(bottom)} pt. Pakai sekitar 1 inci (72 pt) di setiap sisi.`,
-        "margin bukan 1 inci",
+        text.margins.title,
+        text.margins.description(number(left), number(right), number(top), number(bottom)),
+        text.margins.note,
       );
     }
   }
@@ -670,9 +614,9 @@ export function deriveTypographyFindings(metadata: PdfMetadata | null): Typograp
     const percent = Math.round(typography.boldRatio * 100);
     add(
       "typo-bold-overuse",
-      "Kurangi teks tebal",
-      `${percent}% teks isi dicetak tebal. Pakai huruf tebal hanya untuk judul bagian, nama, dan pencapaian terukur.`,
-      `tebal ${percent}% (maks 30%)`,
+      text.boldOveruse.title,
+      text.boldOveruse.description(percent),
+      text.boldOveruse.note(percent),
       "medium",
     );
   }
@@ -680,9 +624,9 @@ export function deriveTypographyFindings(metadata: PdfMetadata | null): Typograp
     const percent = Math.round(typography.italicRatio * 100);
     add(
       "typo-italic-overuse",
-      "Kurangi teks miring",
-      `${percent}% teks isi dicetak miring. Pakai huruf miring hanya untuk subjudul atau jabatan.`,
-      `miring ${percent}% (maks 30%)`,
+      text.italicOveruse.title,
+      text.italicOveruse.description(percent),
+      text.italicOveruse.note(percent),
       "medium",
     );
   }
@@ -691,27 +635,24 @@ export function deriveTypographyFindings(metadata: PdfMetadata | null): Typograp
     typography.titleSize !== typography.bodySize &&
     !typography.fonts.some((font) => font.size === typography.titleSize && font.bold)
   ) {
-    add(
-      "typo-bold-underuse",
-      "Tebalkan nama dan judul bagian",
-      "Nama dan judul bagian belum dicetak tebal. Huruf tebal membantu perekrut dan ATS menemukan struktur CV.",
-      "judul belum tebal",
-    );
+    add("typo-bold-underuse", text.boldUnderuse.title, text.boldUnderuse.description, text.boldUnderuse.note);
   }
-  return { suggestions, summary: notes.length > 0 ? `Tipografi: ${notes.join("; ")}.` : "" };
+  return { suggestions, summary: notes.length > 0 ? text.summary(notes.join("; ")) : "" };
 }
 
 /**
- * Deterministic side of the report (BR-03 to BR-05). Hidden text is stripped first, so it can never
- * earn keyword points. Phase 3 merges this with the model report.
+ * Deterministic side of the report (BR-03 to BR-05), written in the requested language (BR-13).
+ * Hidden text is stripped first, so it can never earn keyword points.
  */
 export function analyzeCv(
   cvText: string,
   targetJobDescription: string,
   metadata: PdfMetadata | null = null,
+  language: Language = DEFAULT_LANGUAGE,
 ): DeterministicReport {
-  const ctx = buildContext(stripIgnored(cvText), targetJobDescription);
-  const typography = deriveTypographyFindings(metadata);
+  const t = RUBRIC_TEXT[language];
+  const ctx = buildContext(stripIgnored(cvText), targetJobDescription, t);
+  const typography = deriveTypographyFindings(metadata, language);
   const checks: Record<AtsCheckId, AtsCheck> = {
     keyword: checkKeyword(ctx),
     skills: checkSkills(ctx),
@@ -730,7 +671,7 @@ export function analyzeCv(
     .sort((a, b) => a.score - b.score)
     .slice(0, SUGGESTION_LIMIT)
     .map((check, index) => ({ id: `sug-${String(index + 1).padStart(2, "0")}`, ...checkSuggestion(check, ctx) }));
-  const hidden = hiddenTextSuggestion(metadata);
+  const hidden = hiddenTextSuggestion(metadata, t);
 
   return {
     overallScore: computeWeightedScore(atsChecks),

@@ -1,7 +1,7 @@
 import type { AiReport } from "@/lib/ai/parser";
 import type { PdfExtraction } from "@/lib/pdf/types";
 import { ATS_CHECK_IDS, type AnalysisMode, type AtsCheck, type SuggestedJob, type Suggestion } from "@/types/ats";
-import { CHECK_NAMES, computeWeightedScore, statusFor, type DeterministicReport } from "./rubric";
+import { computeWeightedScore, statusFor, type DeterministicReport } from "./rubric";
 
 export interface ComposeInput {
   mode: AnalysisMode;
@@ -97,7 +97,8 @@ export function composeReport(input: ComposeInput): ComposedReport {
     if (aiCheck === undefined || aiCheck.detail === "") {
       return fallback;
     }
-    return { id, name: CHECK_NAMES[id], status: statusFor(aiCheck.score), score: aiCheck.score, detail: aiCheck.detail };
+    // The rubric already named the check in the response language.
+    return { id, name: fallback.name, status: statusFor(aiCheck.score), score: aiCheck.score, detail: aiCheck.detail };
   });
 
   const locate = createSnippetLocator(input.extraction);
