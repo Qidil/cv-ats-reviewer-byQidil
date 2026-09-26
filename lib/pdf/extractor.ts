@@ -128,11 +128,16 @@ function fromTextContent(run: TextContentRun): ClassifiedRun {
   };
 }
 
+export interface ExtractOptions {
+  /** P3-D5: past this many milliseconds the extraction is rejected with PDF_TOO_COMPLEX. */
+  timeoutMs?: number;
+}
+
 /**
  * Server only (ADR-007). Extracts text, run boxes, and typography/layout metadata from an uploaded
  * CV, and separates hidden text (BR-02). The input buffer is copied, never stored.
  */
-export async function extractPdf(data: Uint8Array): Promise<PdfExtraction> {
+export async function extractPdf(data: Uint8Array, options: ExtractOptions = {}): Promise<PdfExtraction> {
   if (data.byteLength > MAX_PDF_BYTES) {
     throw new PdfExtractionError("PDF_TOO_LARGE");
   }
@@ -148,9 +153,18 @@ export async function extractPdf(data: Uint8Array): Promise<PdfExtraction> {
     useSystemFonts: false,
     verbosity: pdfjs.VerbosityLevel.ERRORS,
   });
+  const deadline = options.timeoutMs === undefined ? Infinity : Date.now() + options.timeoutMs;
+  // pdf.js runs in this thread and never yields to timers, so the limit is checked between its steps;
+  // the per-page caps bound each step.
+  const checkTime = () => {
+    if (Date.now() >= deadline) {
+      throw new PdfExtractionError("PDF_TOO_COMPLEX");
+    }
+  };
 
   try {
     const doc = await loadingTask.promise;
+    checkTime();
     if (doc.numPages > MAX_PDF_PAGES) {
       throw new PdfExtractionError("PDF_TOO_MANY_PAGES");
     }
@@ -162,14 +176,16 @@ export async function extractPdf(data: Uint8Array): Promise<PdfExtraction> {
 
     for (let pageNumber = 1; pageNumber <= doc.numPages; pageNumber++) {
       const page = await doc.getPage(pageNumber);
+      checkTime();
       const box = normalizeBox(page.view);
       if (box.x1 - box.x0 > MAX_PAGE_SIDE || box.y1 - box.y0 > MAX_PAGE_SIDE) {
-        throw new PdfExtractionError("PDF_INVALID");
+        throw new PdfExtractionError("PDF_TOO_COMPLEX");
       }
       const opList = await page.getOperatorList({ annotationMode: pdfjs.AnnotationMode.DISABLE });
+      checkTime();
       const walk = walkOperatorList(opList, pdfjs.OPS, fontResolver(page), box);
       if (walk.runs.length > MAX_RUNS_PER_PAGE || walk.shapes.length > MAX_SHAPES_PER_PAGE) {
-        throw new PdfExtractionError("PDF_INVALID");
+        throw new PdfExtractionError("PDF_TOO_COMPLEX");
       }
       walk.graphics.forEach((kind) => graphics.add(kind));
 
@@ -188,6 +204,7 @@ export async function extractPdf(data: Uint8Array): Promise<PdfExtraction> {
       pages.push({ pageNumber, box, ocrLayer });
 
       const content = await page.getTextContent();
+      checkTime();
       for (const item of content.items) {
         if (!("str" in item)) continue;
         const text = cleanRunText(item.str);

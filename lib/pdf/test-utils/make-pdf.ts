@@ -51,7 +51,7 @@ export function textLine(text: string, x: number, y: number, size = 11, font = "
 /** 55 visible characters, enough to pass the 50-character scanned-PDF check on its own. */
 export const FILLER_LINE = textLine("Pengalaman kerja sebagai pengembang perangkat lunak lima tahun", 72, 100, 10);
 
-export function makePdf(pages: ReadonlyArray<string | TestPage>, options: TestPdfOptions = {}): Uint8Array {
+export function makePdf(pages: ReadonlyArray<string | TestPage>, options: TestPdfOptions = {}): Uint8Array<ArrayBuffer> {
   const objects: string[] = [];
   const add = (body: string) => objects.push(body);
 

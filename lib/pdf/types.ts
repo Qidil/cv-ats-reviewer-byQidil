@@ -1,5 +1,5 @@
-/** BR-01. */
-export const MAX_PDF_BYTES = 5 * 1024 * 1024;
+/** BR-01. 4 MB (P3-D1), so a whole upload request fits Vercel's 4.5 MB body limit. */
+export const MAX_PDF_BYTES = 4 * 1024 * 1024;
 export const MAX_PDF_PAGES = 10;
 /** Below this many visible non-space characters the PDF is treated as a scan or photo. */
 export const MIN_VISIBLE_CHARS = 50;
@@ -14,13 +14,14 @@ export const PDF_ERROR_CODES = [
   "PDF_PASSWORD_PROTECTED",
   "PDF_TOO_MANY_PAGES",
   "PDF_NO_TEXT_FOUND",
+  "PDF_TOO_COMPLEX",
 ] as const;
 
 export type PdfErrorCode = (typeof PDF_ERROR_CODES)[number];
 
 export const PDF_ERROR_MESSAGES: Readonly<Record<PdfErrorCode, string>> = {
   PDF_TOO_LARGE:
-    "Ukuran file lebih dari 5 MB. Kompres PDF-nya atau ekspor ulang dengan gambar beresolusi lebih rendah.",
+    "Ukuran file lebih dari 4 MB. Kompres PDF-nya atau ekspor ulang dengan gambar beresolusi lebih rendah.",
   PDF_INVALID:
     "File ini bukan PDF yang bisa dibuka. Ekspor ulang CV dari Word, Google Docs, atau aplikasi sejenis ke PDF.",
   PDF_PASSWORD_PROTECTED: "PDF ini dikunci kata sandi. Buka kuncinya dulu, lalu unggah lagi.",
@@ -28,6 +29,8 @@ export const PDF_ERROR_MESSAGES: Readonly<Record<PdfErrorCode, string>> = {
     "PDF ini berisi lebih dari 10 halaman. Unggah CV saja, umumnya 1 sampai 2 halaman.",
   PDF_NO_TEXT_FOUND:
     "Teks di PDF ini tidak terbaca, biasanya karena CV berupa hasil scan atau foto. Ekspor ulang CV dari Word, Google Docs, atau aplikasi sejenis ke PDF.",
+  PDF_TOO_COMPLEX:
+    "PDF ini terlalu rumit untuk diproses. Ekspor ulang CV dari Word, Google Docs, atau aplikasi sejenis ke PDF.",
 };
 
 export class PdfExtractionError extends Error {

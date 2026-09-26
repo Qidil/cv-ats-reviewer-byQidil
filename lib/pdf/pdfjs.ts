@@ -1,5 +1,3 @@
-import { createRequire } from "node:module";
-import { pathToFileURL } from "node:url";
 import { PdfExtractionError } from "./types";
 
 type PdfjsModule = typeof import("pdfjs-dist/legacy/build/pdf.mjs");
@@ -9,17 +7,20 @@ export type PdfPage = Awaited<ReturnType<PdfDocument["getPage"]>>;
 let pdfjsPromise: Promise<PdfjsModule> | undefined;
 
 /**
- * Server only. The worker is resolved from node_modules, so pdfjs-dist has to stay out of the
- * Next.js server bundle (serverExternalPackages, added with the first route in Phase 3).
+ * Server only. The worker module registers itself on globalThis, so pdf.js runs it in this process
+ * without resolving a file at runtime, and serverless file tracing keeps it in the deployment.
  */
 export function loadPdfjs(): Promise<PdfjsModule> {
-  pdfjsPromise ??= import("pdfjs-dist/legacy/build/pdf.mjs").then((pdfjs) => {
-    const nodeRequire = createRequire(import.meta.url);
-    pdfjs.GlobalWorkerOptions.workerSrc = pathToFileURL(
-      nodeRequire.resolve("pdfjs-dist/legacy/build/pdf.worker.mjs"),
-    ).href;
-    return pdfjs;
-  });
+  pdfjsPromise ??= Promise.all([
+    import("pdfjs-dist/legacy/build/pdf.mjs"),
+    import("pdfjs-dist/legacy/build/pdf.worker.mjs"),
+  ]).then(
+    ([pdfjs]) => pdfjs,
+    (error: unknown) => {
+      pdfjsPromise = undefined;
+      throw error;
+    },
+  );
   return pdfjsPromise;
 }
 

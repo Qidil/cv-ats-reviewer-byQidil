@@ -291,7 +291,8 @@ describe("extractPdf errors", () => {
     );
   });
 
-  it("rejects files over 5 MB before parsing", async () => {
+  it("rejects files over 4 MB before parsing", async () => {
+    expect(MAX_PDF_BYTES).toBe(4 * 1024 * 1024);
     await expectPdfError(extractPdf(new Uint8Array(MAX_PDF_BYTES + 1)), "PDF_TOO_LARGE");
   });
 
@@ -308,11 +309,19 @@ describe("extractPdf errors", () => {
     ["more than 20,000 text runs", `${FILLER_LINE}\nBT /F1 10 Tf 72 400 Td ${"(a) Tj ".repeat(20_001)}ET`],
     ["more than 5,000 painted shapes", `${FILLER_LINE}\n${"0 0 1 1 re f\n".repeat(5_001)}`],
   ])("rejects a page with %s", async (_label, content) => {
-    await expectPdfError(extract(content), "PDF_INVALID");
+    await expectPdfError(extract(content), "PDF_TOO_COMPLEX");
   });
 
   it("rejects a page taller than the PDF limit of 14,400 pt", async () => {
-    await expectPdfError(extractPdf(makePdf([{ content: FILLER_LINE, mediaBox: [0, 0, 612, 14_401] }])), "PDF_INVALID");
+    await expectPdfError(
+      extractPdf(makePdf([{ content: FILLER_LINE, mediaBox: [0, 0, 612, 14_401] }])),
+      "PDF_TOO_COMPLEX",
+    );
+  });
+
+  it("stops an extraction that runs past its time limit", async () => {
+    await expectPdfError(extractPdf(makePdf([FILLER_LINE]), { timeoutMs: 0 }), "PDF_TOO_COMPLEX");
+    await expect(extractPdf(makePdf([FILLER_LINE]), { timeoutMs: 20_000 })).resolves.toMatchObject({ pageCount: 1 });
   });
 
   it("maps pdf.js password errors and passes its own errors through", () => {
