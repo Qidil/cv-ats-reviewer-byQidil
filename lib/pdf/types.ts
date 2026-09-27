@@ -95,9 +95,14 @@ export interface PdfRun {
   textEnd: number;
 }
 
+/** A page's `/Rotate`, normalized; run coordinates stay in unrotated page space. */
+export type PageRotation = 0 | 90 | 180 | 270;
+
 export interface PdfPageInfo {
   pageNumber: number;
   box: PdfBox;
+  /** DELTA-55: the highlights cannot be drawn on a rotated page. */
+  rotation: PageRotation;
   /** Scanned page whose invisible OCR text was kept as readable text (BR-02). */
   ocrLayer: boolean;
 }

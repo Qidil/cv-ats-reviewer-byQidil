@@ -42,7 +42,7 @@ export function analyzeResponse(mode: AnalysisMode = "mode-b"): AnalyzeResponse 
     document: {
       pageCount: 1,
       source: "operator-list",
-      pages: [{ pageNumber: 1, box: { x0: 0, y0: 0, x1: 612, y1: 792 }, preview: { width: 1240, height: 1605, webp: WEBP } }],
+      pages: [{ pageNumber: 1, box: { x0: 0, y0: 0, x1: 612, y1: 792 }, rotation: 0, preview: { width: 1240, height: 1605, webp: WEBP } }],
       previewsOmitted: false,
       runs: [{ pageNumber: 1, x: 72, y: 740, width: 80, fontSize: 11, hidden: false, textStart: 0, textEnd: 12 }],
       runsOmitted: false,

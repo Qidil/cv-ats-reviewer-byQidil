@@ -1,4 +1,4 @@
-import type { HiddenTextSummary, PdfBox } from "@/lib/pdf/types";
+import type { HiddenTextSummary, PageRotation, PdfBox } from "@/lib/pdf/types";
 import type { AnalysisMode, AtsCheck, SuggestedJob, Suggestion } from "./ats";
 
 /** Multipart field names of POST /api/analyze (api.md). */
@@ -127,7 +127,7 @@ export interface PagePreviewImage {
 export interface AnalyzedDocument {
   pageCount: number;
   source: "operator-list" | "text-content";
-  pages: Array<{ pageNumber: number; box: PdfBox; preview: PagePreviewImage | null }>;
+  pages: Array<{ pageNumber: number; box: PdfBox; rotation: PageRotation; preview: PagePreviewImage | null }>;
   /** True when at least one page has no image (budget, deadline, or render failure). */
   previewsOmitted: boolean;
   /** Empty when `runsOmitted` is true. */

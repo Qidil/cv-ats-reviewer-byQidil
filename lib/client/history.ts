@@ -1,7 +1,8 @@
 import { createStorage, type CvAtsStorage } from "@/lib/db/storage";
 import type { Language } from "@/lib/i18n/language";
+import { highlightsFor, type PlacedHighlight } from "@/lib/pdf/highlighter";
 import type { HiddenTextSummary } from "@/lib/pdf/types";
-import type { AnalyzeResponse } from "@/types/api";
+import type { AnalyzeResponse, DocumentRun } from "@/types/api";
 import type { AnalysisMode, AtsCheck, SuggestedJob, Suggestion } from "@/types/ats";
 import { LOCAL_STORAGE_KEYS, type CvEntity, type CvPageImage, type ReviewEntity } from "@/types/db";
 
@@ -23,6 +24,8 @@ export interface AnalysisView {
   suggestions: Suggestion[];
   jobs: SuggestedJob[];
   pages: CvPageImage[];
+  /** Where each suggestion's snippet sits on the page images, by suggestion id; geometry only, never CV text. */
+  highlights: Record<string, PlacedHighlight>;
   hiddenText: HiddenTextSummary;
   modelUsed: string;
   /** DELTA-51: shown as short notes under the result. */
@@ -53,10 +56,30 @@ export function pagesFromResponse(response: AnalyzeResponse): CvPageImage[] {
   return response.document.pages.map((page) => ({
     pageNumber: page.pageNumber,
     box: page.box,
+    rotation: page.rotation,
     image: page.preview
       ? { blob: base64ToBlob(page.preview.webp, "image/webp"), width: page.preview.width, height: page.preview.height }
       : null,
   }));
+}
+
+/** P5-T1: rawText is read here to place the boxes and goes no further than this call. */
+function highlightsOf(
+  rawText: string,
+  runs: readonly DocumentRun[],
+  suggestions: readonly Suggestion[],
+  pages: readonly CvPageImage[],
+): Record<string, PlacedHighlight> {
+  return highlightsFor(
+    { rawText, runs },
+    suggestions,
+    pages.map((page) => ({
+      pageNumber: page.pageNumber,
+      box: page.box,
+      rotation: page.rotation ?? 0,
+      image: page.image ? { width: page.image.width, height: page.image.height } : null,
+    })),
+  );
 }
 
 export function viewFromResponse(
@@ -81,6 +104,7 @@ export function viewFromResponse(
     suggestions: response.suggestions,
     jobs: response.suggestedJobs,
     pages,
+    highlights: highlightsOf(response.document.rawText, response.document.runs, response.suggestions, pages),
     hiddenText: response.document.hiddenText,
     modelUsed: response.meta.modelUsed,
     failoverOccurred: response.meta.failoverOccurred,
@@ -181,6 +205,7 @@ export async function loadStoredAnalysis(
       missingSkills: match.missingSkills,
     })),
     pages: pages?.pages ?? [],
+    highlights: highlightsOf(cv.rawText, pages?.runs ?? [], review.suggestions, pages?.pages ?? []),
     hiddenText: cv.hiddenText,
     modelUsed: review.modelUsed,
     failoverOccurred: review.failoverOccurred ?? false,

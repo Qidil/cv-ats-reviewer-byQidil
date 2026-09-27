@@ -3,6 +3,8 @@
 import { motion, useReducedMotion } from "motion/react";
 import { useI18n } from "@/components/i18n-provider";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/cn";
 import { fillTemplate } from "@/lib/i18n/format";
 import type { Suggestion } from "@/types/ats";
 import { PRIORITY_ORDER, PRIORITY_TONE, staggerVariants } from "./status";
@@ -27,8 +29,22 @@ export function WeaknessList({ weaknesses }: { weaknesses: readonly string[] }) 
   );
 }
 
+/** The two-way link with the page viewer (StyleGuide §5.2); without it the cards are plain. */
+export interface SuggestionLink {
+  idPrefix: string;
+  /** Suggestions whose snippet has a highlight on a page image. */
+  placed: ReadonlySet<string>;
+  /** The card a highlight just pointed at, drawn with a temporary ring. */
+  flashId: string | null;
+  onShowInCv: (id: string) => void;
+  onEmphasize: (id: string | null) => void;
+}
+
+export const suggestionCardId = (prefix: string, id: string) => `${prefix}-card-${id}`;
+export const suggestionTitleId = (prefix: string, id: string) => `${prefix}-title-${id}`;
+
 /** High priority first, so the red items lead (BR-08, StyleGuide §1.4). */
-export function SuggestionList({ suggestions }: { suggestions: readonly Suggestion[] }) {
+export function SuggestionList({ suggestions, link }: { suggestions: readonly Suggestion[]; link?: SuggestionLink }) {
   const { t } = useI18n();
   const { list, item } = staggerVariants(useReducedMotion() === true);
   const ordered = [...suggestions].sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]);
@@ -44,12 +60,23 @@ export function SuggestionList({ suggestions }: { suggestions: readonly Suggesti
           {ordered.map((suggestion) => (
             <motion.li
               key={suggestion.id}
+              id={link ? suggestionCardId(link.idPrefix, suggestion.id) : undefined}
               variants={item}
-              className="rounded-lg border border-subtle bg-surface p-4"
+              className={cn(
+                "rounded-lg border border-subtle bg-surface p-4 transition-shadow motion-reduce:transition-none",
+                link?.flashId === suggestion.id && "ring-2 ring-action",
+              )}
             >
               <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
                 <Badge tone={PRIORITY_TONE[suggestion.priority]}>{t.results.priority[suggestion.priority]}</Badge>
-                <h4 className="min-w-0 flex-1 basis-48 font-semibold">{suggestion.title}</h4>
+                <h4
+                  id={link ? suggestionTitleId(link.idPrefix, suggestion.id) : undefined}
+                  // A highlight moves focus here, so a keyboard user continues from the card it named.
+                  tabIndex={link ? -1 : undefined}
+                  className="min-w-0 flex-1 basis-48 font-semibold"
+                >
+                  {suggestion.title}
+                </h4>
               </div>
               <p className="mt-2 text-secondary">{suggestion.description}</p>
               {suggestion.targetTextSnippet ? (
@@ -62,6 +89,19 @@ export function SuggestionList({ suggestions }: { suggestions: readonly Suggesti
                   <blockquote className="mt-1 font-mono text-code break-words whitespace-pre-wrap text-primary">
                     {suggestion.targetTextSnippet}
                   </blockquote>
+                  {link?.placed.has(suggestion.id) ? (
+                    <Button
+                      variant="secondary"
+                      className="mt-2"
+                      onClick={() => link.onShowInCv(suggestion.id)}
+                      onMouseEnter={() => link.onEmphasize(suggestion.id)}
+                      onMouseLeave={() => link.onEmphasize(null)}
+                      onFocus={() => link.onEmphasize(suggestion.id)}
+                      onBlur={() => link.onEmphasize(null)}
+                    >
+                      {t.inspector.showInCv}
+                    </Button>
+                  ) : null}
                 </figure>
               ) : null}
             </motion.li>

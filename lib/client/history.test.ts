@@ -56,8 +56,8 @@ function response(mode: "mode-a" | "mode-b" = "mode-b"): AnalyzeResponse {
       pageCount: 2,
       source: "operator-list",
       pages: [
-        { pageNumber: 1, box: { x0: 0, y0: 0, x1: 612, y1: 792 }, preview: { width: 1240, height: 1605, webp: WEBP } },
-        { pageNumber: 2, box: { x0: 0, y0: 0, x1: 612, y1: 792 }, preview: null },
+        { pageNumber: 1, box: { x0: 0, y0: 0, x1: 612, y1: 792 }, rotation: 0, preview: { width: 1240, height: 1605, webp: WEBP } },
+        { pageNumber: 2, box: { x0: 0, y0: 0, x1: 612, y1: 792 }, rotation: 0, preview: null },
       ],
       previewsOmitted: true,
       runs: [{ pageNumber: 1, x: 72, y: 740, width: 80, fontSize: 11, hidden: false, textStart: 0, textEnd: 12 }],
@@ -145,6 +145,37 @@ describe("saving and reopening an analysis", () => {
     const view = viewFromResponse(response("mode-a"), { ...SOURCE, mode: "mode-a", jobTitle: " Backend " }, [], null, "now");
 
     expect(view).toMatchObject({ cvId: null, reviewId: null, targetJobTitle: "Backend", jobs: [], pageCount: 2 });
+  });
+
+  it("places the highlights for a fresh and a reopened view, with boxes only and no CV text (P5-T1)", async () => {
+    const placed = response();
+    placed.document.rawText = "Budi Santoso\nMenulis dokumentasi teknis.";
+    placed.document.runs = [
+      { pageNumber: 1, x: 72, y: 740, width: 80, fontSize: 11, hidden: false, textStart: 0, textEnd: 12 },
+      { pageNumber: 1, x: 72, y: 700, width: 160, fontSize: 11, hidden: false, textStart: 13, textEnd: 40 },
+    ];
+    const pages = pagesFromResponse(placed);
+    const fresh = viewFromResponse(placed, SOURCE, pages, null, "now");
+
+    expect(fresh.highlights["sug-01"]).toMatchObject({ pageNumber: 1 });
+    expect(fresh.highlights["sug-01"]?.rects).toHaveLength(1);
+    expect(JSON.stringify(fresh.highlights)).not.toMatch(/Menulis|Budi/);
+
+    const ids = await saveAnalysisResult(storage, { response: placed, source: SOURCE, pages, existingCvId: null, now: "now" });
+    const reopened = await loadStoredAnalysis(storage, ids.cvId);
+    expect(reopened?.highlights).toEqual(fresh.highlights);
+
+    // DELTA-55: the same page turned upside down keeps its shape, and still gets no boxes.
+    const turned = structuredClone(placed);
+    turned.document.pages[0].rotation = 180;
+    expect(viewFromResponse(turned, SOURCE, pagesFromResponse(turned), null, "now").highlights).toEqual({});
+  });
+
+  it("places nothing when the response left the runs out", () => {
+    const omitted = response();
+    omitted.document.runs = [];
+    omitted.document.runsOmitted = true;
+    expect(viewFromResponse(omitted, SOURCE, pagesFromResponse(omitted), null, "now").highlights).toEqual({});
   });
 
   it("stores the model notes with the review and reads an older review without them as none (DELTA-51)", async () => {

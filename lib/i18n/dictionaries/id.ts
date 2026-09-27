@@ -116,6 +116,18 @@ export const id: Dictionary = {
     alt: "Halaman {page} CV Anda",
     missing: "Tidak ada gambar untuk halaman ini.",
   },
+  inspector: {
+    legend: "Warna sorotan",
+    legendAdvisory: "Disarankan atau opsional",
+    controls: "Kontrol halaman",
+    previousPage: "Halaman sebelumnya",
+    nextPage: "Halaman berikutnya",
+    zoom: "Perbesaran",
+    zoomFit: "Pas lebar",
+    zoomStep: "{percent}%",
+    highlight: "{priority}: {title}",
+    showInCv: "Lihat di CV",
+  },
   settings: {
     title: "Pengaturan",
     intro:

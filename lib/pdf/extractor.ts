@@ -10,6 +10,7 @@ import {
   nonSpaceLength,
   type GraphicKind,
   type HiddenReason,
+  type PageRotation,
   type PdfBox,
   type PdfExtraction,
   type PdfPageInfo,
@@ -38,6 +39,12 @@ function hasPdfHeader(data: Uint8Array): boolean {
 function normalizeBox(view: readonly number[]): PdfBox {
   const [a = 0, b = 0, c = 0, d = 0] = view;
   return { x0: Math.min(a, c), y0: Math.min(b, d), x1: Math.max(a, c), y1: Math.max(b, d) };
+}
+
+/** `/Rotate` may be any multiple of 90, negative included; anything else counts as unrotated, as pdf.js does. */
+function normalizeRotation(rotate: unknown): PageRotation {
+  const degrees = typeof rotate === "number" && Number.isInteger(rotate) && rotate % 90 === 0 ? ((rotate % 360) + 360) % 360 : 0;
+  return degrees as PageRotation;
 }
 
 /**
@@ -197,7 +204,7 @@ export async function extractPdf(data: Uint8Array, options: ExtractOptions = {})
         const kept = ocrLayer ? reasons.filter((reason) => reason !== "invisible-mode") : reasons;
         walkedRuns.push(toClassifiedRun(run, text, pageNumber, kept));
       }
-      pages.push({ pageNumber, box, ocrLayer });
+      pages.push({ pageNumber, box, rotation: normalizeRotation(page.rotate), ocrLayer });
 
       const content = await page.getTextContent();
       checkTime();

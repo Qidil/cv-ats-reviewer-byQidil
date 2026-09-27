@@ -70,6 +70,18 @@ describe("extractPdf text and positions", () => {
     }
   });
 
+  it("records each page's rotation, normalized to 0, 90, 180, or 270 (DELTA-55)", async () => {
+    const result = await extractPdf(
+      makePdf([
+        { content: FILLER_LINE },
+        { content: FILLER_LINE, rotate: 180 },
+        { content: FILLER_LINE, rotate: -90 },
+        { content: FILLER_LINE, rotate: 450 },
+      ]),
+    );
+    expect(result.pages.map((page) => page.rotation)).toEqual([0, 180, 270, 90]);
+  });
+
   it("turns TJ kerning gaps into word spaces", async () => {
     const result = await extract(["BT /F1 12 Tf 72 720 Td [(Senior) -300 (Engineer)] TJ ET", FILLER_LINE].join("\n"));
 

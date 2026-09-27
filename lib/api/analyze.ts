@@ -231,7 +231,7 @@ function toDocument(extraction: PdfExtraction): AnalyzedDocument {
   return {
     pageCount: extraction.pageCount,
     source: extraction.source,
-    pages: extraction.pages.map(({ pageNumber, box }) => ({ pageNumber, box, preview: null })),
+    pages: extraction.pages.map(({ pageNumber, box, rotation }) => ({ pageNumber, box, rotation, preview: null })),
     previewsOmitted: false,
     runs: extraction.runs.map((run) => ({
       pageNumber: run.pageNumber,

@@ -1,5 +1,5 @@
 import type { Language } from "@/lib/i18n/language";
-import type { HiddenTextSummary, PdfBox } from "@/lib/pdf/types";
+import type { HiddenTextSummary, PageRotation, PdfBox } from "@/lib/pdf/types";
 import type { AnalysisMode, AtsCheck, Suggestion } from "./ats";
 import type { DocumentRun } from "./api";
 
@@ -29,6 +29,8 @@ export interface CvFileEntity {
 export interface CvPageImage {
   pageNumber: number;
   box: PdfBox;
+  /** DELTA-55: absent on pages stored before it, which count as unrotated. */
+  rotation?: PageRotation;
   /** The server-rendered WebP (ADR-004); null when the server sent none. */
   image: { blob: Blob; width: number; height: number } | null;
 }

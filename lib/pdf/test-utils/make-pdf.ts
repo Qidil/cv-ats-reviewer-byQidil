@@ -3,6 +3,8 @@
 export interface TestPage {
   content: string;
   mediaBox?: [number, number, number, number];
+  /** The page's /Rotate entry. */
+  rotate?: number;
 }
 
 export interface TestPdfOptions {
@@ -81,8 +83,9 @@ export function makePdf(pages: ReadonlyArray<string | TestPage>, options: TestPd
     const page = typeof entry === "string" ? { content: entry } : entry;
     const contents = add(pdfStream("", page.content));
     const box = (page.mediaBox ?? [0, 0, 612, 792]).join(" ");
+    const rotate = page.rotate === undefined ? "" : ` /Rotate ${page.rotate}`;
     return add(
-      `<< /Type /Page /Parent ${pagesRoot} 0 R /MediaBox [${box}] /Contents ${contents} 0 R /Resources << ${resources} >> >>`,
+      `<< /Type /Page /Parent ${pagesRoot} 0 R /MediaBox [${box}]${rotate} /Contents ${contents} 0 R /Resources << ${resources} >> >>`,
     );
   });
   objects[catalog - 1] = `<< /Type /Catalog /Pages ${pagesRoot} 0 R >>`;

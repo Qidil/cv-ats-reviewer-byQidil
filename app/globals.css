@@ -68,6 +68,8 @@
     color-scheme: dark;
     /* The page grows past the viewport when an analysis starts; a reserved gutter keeps the layout from shifting (G-11). */
     scrollbar-gutter: stable;
+    /* The sticky header is about 61 px tall; anything scrolled into view lands below it (G5-06). */
+    scroll-padding-top: 4.5rem;
   }
 
   body {

@@ -120,6 +120,18 @@ export const en = {
     alt: "Page {page} of your CV",
     missing: "No image for this page.",
   },
+  inspector: {
+    legend: "Highlight colors",
+    legendAdvisory: "Suggested or optional",
+    controls: "Page controls",
+    previousPage: "Previous page",
+    nextPage: "Next page",
+    zoom: "Zoom",
+    zoomFit: "Fit width",
+    zoomStep: "{percent}%",
+    highlight: "{priority}: {title}",
+    showInCv: "Show in CV",
+  },
   settings: {
     title: "Settings",
     intro:
