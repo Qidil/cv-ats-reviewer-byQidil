@@ -13,6 +13,8 @@ export interface QuotaStore {
   read(key: string): Promise<number>;
   /** Adds one and sets the expiry when the key has none yet; returns the new count. */
   increment(key: string, expiresAtSeconds: number): Promise<number>;
+  /** Takes back one count made by increment; returns the new count. */
+  decrement(key: string): Promise<number>;
 }
 
 export class QuotaStoreError extends Error {
@@ -125,7 +127,12 @@ export async function readQuota(store: QuotaStore, key: string, limit: number, n
   return toStatus(limit, await store.read(key), nowMs);
 }
 
-export async function recordAnalysis(
+/**
+ * DELTA-56: the slot is taken before any work, so requests running side by side cannot all pass a
+ * separate check. `used` over `limit` means the slot was not granted; the caller gives it back with
+ * releaseAnalysis, as it does when the analysis fails or is cancelled, so only successes stay counted.
+ */
+export async function reserveAnalysis(
   store: QuotaStore,
   key: string,
   limit: number,
@@ -133,6 +140,10 @@ export async function recordAnalysis(
 ): Promise<QuotaStatus> {
   const used = await store.increment(key, Math.floor(nextResetMs(nowMs) / 1000) + EXPIRY_MARGIN_S);
   return toStatus(limit, used, nowMs);
+}
+
+export async function releaseAnalysis(store: QuotaStore, key: string): Promise<void> {
+  await store.decrement(key);
 }
 
 /** Development and tests only: counts live in this process and vanish on restart. */
@@ -154,6 +165,14 @@ export function createMemoryStore(now: () => number = Date.now): QuotaStore {
       const entry = live(key) ?? { count: 0, expiresAtMs: expiresAtSeconds * 1000 };
       entry.count += 1;
       counters.set(key, entry);
+      return entry.count;
+    },
+    async decrement(key) {
+      const entry = live(key);
+      if (entry === undefined) {
+        return 0;
+      }
+      entry.count = Math.max(0, entry.count - 1);
       return entry.count;
     },
   };
@@ -212,6 +231,9 @@ export function createUpstashStore(config: { url: string; token: string }, fetch
       }
       commandResult(results[1]);
       return toCount(commandResult(results[0]));
+    },
+    async decrement(key) {
+      return toCount(commandResult(await call("", ["DECR", key])));
     },
   };
 }

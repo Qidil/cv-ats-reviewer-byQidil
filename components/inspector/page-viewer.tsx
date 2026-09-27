@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { fillTemplate } from "@/lib/i18n/format";
 import type { CvPageImage } from "@/types/db";
-import { HighlightOverlay, highlightDomId, type InspectorMark } from "./highlight-overlay";
+import { HighlightOverlay, highlightDomId, leadMarkId, type InspectorMark } from "./highlight-overlay";
 import { HighlightLegend } from "./legend";
 
 /** P5-D3: fit width, 150 %, and 200 %; a zoomed page pans inside the viewer, never the document. */
@@ -132,7 +132,7 @@ export function PageViewer({
       showHighlight: (id) => {
         const mark = marks.find((candidate) => candidate.id === id);
         const container = scroller.current;
-        const target = document.getElementById(highlightDomId(idPrefix, id));
+        const target = document.getElementById(highlightDomId(idPrefix, leadMarkId(marks, id)));
         if (mark === undefined || container === null || target === null) {
           return;
         }

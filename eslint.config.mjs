@@ -17,6 +17,8 @@ const eslintConfig = defineConfig([
     ".codex/**",
     ".impeccable/**",
     ".opencode/**",
+    // Playwright MCP output and scratch scripts; the kept E2E scenario lives in test/e2e/.
+    ".playwright-mcp/**",
   ]),
 ]);
 

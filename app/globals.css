@@ -16,6 +16,8 @@
   --color-critical: #ef4444;
   --color-critical-strong: #dc2626;
   --color-critical-hover: #b91c1c;
+  /* DELTA-62: error text; critical itself is 3.90:1 on surface-elevated, under AA. */
+  --color-critical-text: #f87171;
   --color-advisory: #f59e0b;
   --color-advisory-strong: #d97706;
   --color-pass: #10b981;

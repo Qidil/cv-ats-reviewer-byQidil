@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, screen } from "@testing-library/react";
+import { act, fireEvent, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithI18n } from "@/components/test-utils/render";
 import { LOCAL_STORAGE_KEYS } from "@/types/db";
@@ -157,6 +157,34 @@ describe("ByokModal (FEAT-05, StyleGuide §7.3)", () => {
     typeKey(OPENROUTER_KEY);
     fireEvent.click(screen.getByRole("button", { name: "Test key" }));
     expect(await screen.findByText("The provider rejected this key.")).toBeInTheDocument();
+  });
+
+  it("drops a test result that arrives after the key was edited (G6-07)", async () => {
+    let answer: (value: unknown) => void = () => undefined;
+    vi.stubGlobal("fetch", vi.fn(() => new Promise((resolve) => (answer = resolve))));
+    renderModal();
+    typeKey(OPENROUTER_KEY);
+    fireEvent.click(screen.getByRole("button", { name: "Test key" }));
+    typeKey("sk-or-v1-test-1111");
+    await act(async () => {
+      answer({ ok: true, status: 200, json: async () => ({ data: { is_free_tier: false } }) });
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(screen.queryByText(/The provider accepted this key/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Test key" })).toBeEnabled();
+  });
+
+  it("clears the test result when the model changes the recognized provider (G6-07)", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ data: [{ id: "deepseek-chat" }] }) })));
+    renderModal();
+    typeKey("sk-test-0000");
+    typeModel("Model (required)", "deepseek-chat");
+    fireEvent.click(screen.getByRole("button", { name: "Test key" }));
+    expect(await screen.findByText("The provider accepted this key.")).toBeInTheDocument();
+    typeModel("Model (required)", "deepseek-reasoner");
+    expect(screen.getByText("The provider accepted this key.")).toBeInTheDocument();
+    typeModel("Model (required)", "gpt-4o-mini");
+    expect(screen.queryByText("The provider accepted this key.")).not.toBeInTheDocument();
   });
 
   it("removes a saved key and says the free quota is back", () => {

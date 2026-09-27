@@ -180,7 +180,7 @@ function HistoryList({
       </span>
       {busy ? <p className="text-small text-secondary">{t.history.busy}</p> : null}
       {deleteFailed ? (
-        <p role="alert" className="text-small text-red-400">
+        <p role="alert" className="text-small text-critical-text">
           {t.history.deleteFailed}
         </p>
       ) : null}

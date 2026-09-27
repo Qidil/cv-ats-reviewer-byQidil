@@ -8,6 +8,6 @@ export default defineConfig({
     },
   },
   test: {
-    include: ["{app,components,lib,types}/**/*.test.{ts,tsx}"],
+    include: ["{app,components,lib,types}/**/*.test.{ts,tsx}", "proxy.test.ts"],
   },
 });

@@ -234,13 +234,14 @@ describe("runAnalysis", () => {
     expect(after.meta.quota?.used).toBe(1);
   });
 
-  it("refuses a built-in-key analysis when the counter cannot be read (P3-D2)", async () => {
+  it("refuses a built-in-key analysis when no slot can be reserved (P3-D2)", async () => {
     const ai = openRouter();
     const broken: QuotaStore = {
-      read: async () => {
+      read: async () => 0,
+      increment: async () => {
         throw new Error("Upstash down");
       },
-      increment: async () => 1,
+      decrement: async () => 0,
     };
 
     await expect(runAnalysis(input(), deps({ fetch: ai.fetch, quotaStore: broken }))).rejects.toMatchObject({
@@ -249,16 +250,45 @@ describe("runAnalysis", () => {
     expect(ai.calls()).toBe(0);
   });
 
-  it("still returns the result when only the count after it fails", async () => {
+  it("keeps the real error when giving the slot back fails", async () => {
     const flaky: QuotaStore = {
       read: async () => 3,
-      increment: async () => {
+      increment: async () => 4,
+      decrement: async () => {
         throw new Error("Upstash down");
       },
     };
-    const result = await runAnalysis(input(), deps({ quotaStore: flaky }));
+    const failing = openRouter(() => Response.json({ error: { code: 503 } }, { status: 503 })).fetch;
 
-    expect(result.meta.quota).toMatchObject({ used: 4, remaining: 6 });
+    await expect(runAnalysis(input(), deps({ quotaStore: flaky, fetch: failing }))).rejects.toMatchObject({
+      code: "MODEL_UNAVAILABLE",
+    });
+  });
+
+  it("lets only the daily limit through when analyses run side by side (DELTA-56)", async () => {
+    const dependencies = deps({ config: { ...CONFIG, dailyLimit: 2 } });
+    const outcomes = await Promise.allSettled(Array.from({ length: 5 }, () => runAnalysis(input(), dependencies)));
+    const refused = outcomes.filter((outcome) => outcome.status === "rejected");
+
+    expect(outcomes.filter((outcome) => outcome.status === "fulfilled")).toHaveLength(2);
+    expect(refused.map((outcome) => (outcome as PromiseRejectedResult).reason.code)).toEqual(Array(3).fill("DAILY_QUOTA_EXCEEDED"));
+    await expect(runAnalysis(input(), dependencies)).rejects.toMatchObject({ code: "DAILY_QUOTA_EXCEEDED" });
+  });
+
+  it("stops the chain and counts nothing when the client cancels (DELTA-57)", async () => {
+    const client = new AbortController();
+    let calls = 0;
+    const cancelling: typeof fetch = async () => {
+      calls += 1;
+      client.abort();
+      throw new DOMException("The operation was aborted.", "AbortError");
+    };
+    const dependencies = deps({ fetch: cancelling });
+
+    await expect(runAnalysis(input({ signal: client.signal }), dependencies)).rejects.toMatchObject({ name: "AbortError" });
+    expect(calls).toBe(1);
+    const after = await runAnalysis(input(), { ...dependencies, fetch: openRouter().fetch });
+    expect(after.meta.quota?.used).toBe(1);
   });
 
   it("limits every network per clock hour with any key, before extraction (rules.md §4.3.6)", async () => {
@@ -295,6 +325,9 @@ describe("runAnalysis", () => {
         throw new Error("Upstash down");
       },
       increment: async () => {
+        throw new Error("Upstash down");
+      },
+      decrement: async () => {
         throw new Error("Upstash down");
       },
     };
@@ -507,6 +540,9 @@ describe("personal keys from other providers (ADR-009)", () => {
         throw new Error("Upstash down");
       },
       increment: async () => {
+        throw new Error("Upstash down");
+      },
+      decrement: async () => {
         throw new Error("Upstash down");
       },
     };

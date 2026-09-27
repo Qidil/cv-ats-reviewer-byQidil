@@ -191,10 +191,12 @@ function toHeaders(incoming: IncomingHttpHeaders): Headers {
  * (rebinding) cannot point it elsewhere. Redirects come back as responses and are never followed.
  */
 export async function safeFetch(input: string, init: RequestInit = {}, options: SafeFetchOptions = {}): Promise<Response> {
+  // Only a personal key reaches a custom endpoint, so refusals use the personal-key wording (api.md).
+  const refused = (cause?: unknown) => new ApiError("INVALID_INPUT", { keyOwner: "user", cause });
   const url = new URL(input);
   const secure = url.protocol === "https:";
   if ((!secure && !(url.protocol === "http:" && options.allowPrivate)) || url.username !== "" || url.password !== "") {
-    throw new ApiError("INVALID_INPUT");
+    throw refused();
   }
   const hostname = url.hostname.replace(/^\[|\]$/g, "");
   const signal = init.signal ?? null;
@@ -208,14 +210,14 @@ export async function safeFetch(input: string, init: RequestInit = {}, options: 
   } catch (error) {
     // A name that does not exist is a wrong address; a temporary DNS failure may pass on a retry.
     if ((error as { code?: unknown } | null)?.code === "ENOTFOUND") {
-      throw new ApiError("INVALID_INPUT", { cause: error });
+      throw refused(error);
     }
     throw error;
   }
   const allowed = (kind: AddressKind) => kind === "public" || (kind === "private" && options.allowPrivate === true);
   const pinned = addresses[0];
   if (pinned === undefined || !addresses.every((entry) => allowed(classifyAddress(entry.address)))) {
-    throw new ApiError("INVALID_INPUT");
+    throw refused();
   }
 
   // Node asks for every address when it races IPv4 and IPv6 (autoSelectFamily); each one passed the check above.

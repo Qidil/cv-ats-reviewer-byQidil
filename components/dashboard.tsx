@@ -53,7 +53,14 @@ type ResultNotice = "notSaved" | "storageFull";
 
 type PendingPhase =
   | { kind: "restoring" }
-  | { kind: "analyzing"; stage: "uploading" | "processing"; fraction: number; startedAt: number };
+  | {
+      kind: "analyzing";
+      stage: "uploading" | "processing";
+      fraction: number;
+      startedAt: number;
+      /** The answer has arrived and is being saved; there is nothing left for Cancel to stop. */
+      saving?: boolean;
+    };
 
 type Phase = { kind: "start" } | PendingPhase | { kind: "result"; view: AnalysisView; notice: ResultNotice | null };
 
@@ -125,6 +132,7 @@ function PendingLayout({
             stage={phase.stage}
             fraction={phase.fraction}
             startedAt={phase.startedAt}
+            canCancel={phase.saving !== true}
             onCancel={onCancel ?? (() => undefined)}
           />
         ) : phase?.kind === "restoring" ? (
@@ -139,7 +147,7 @@ function PendingLayout({
           ))}
         </div>
       </div>
-      <Skeleton className="aspect-[1/1.414] w-full rounded-lg lg:col-start-1 lg:row-start-1" />
+      <Skeleton className="aspect-[1/1.414] max-h-[45vh] w-full rounded-lg lg:col-start-1 lg:row-start-1 lg:max-h-none" />
     </div>
   );
 }
@@ -362,7 +370,15 @@ export function Dashboard() {
     } finally {
       abort.current = null;
     }
-    await settle(outcome, source, cv);
+    if (outcome.kind === "success") {
+      setPhase((current) => (current.kind === "analyzing" ? { ...current, saving: true } : current));
+    }
+    try {
+      await settle(outcome, source, cv);
+    } catch {
+      // G6-08: a 2xx body missing a part the view needs must still end on a message, not on "analyzing".
+      await settle({ kind: "client-error", failure: "UNREADABLE" }, source, cv);
+    }
   };
 
   const pickFile = (file: File) => {

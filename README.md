@@ -86,6 +86,11 @@ Every variable is optional in development. `.env.example` lists them with commen
 | `npm run typecheck` | Generates route types and runs `tsc --noEmit`. |
 | `npm run lint` | ESLint with the Next.js rules. |
 
+The end-to-end journey in `test/e2e/workflow.e2e.js` has no npm script. It runs through the Playwright MCP
+against `npm run build` then `npm start -- -p 3100`, and uses the real AI with a fictional CV it builds itself.
+Pass the file to `browser_run_code_unsafe` as `filename`: the first call starts the run, and later calls
+return the checks so far and then the result. A run takes about a minute.
+
 ## Deploying
 
 The app targets Vercel; any Node.js host that runs Next.js 16 should work. Before a public deployment:
@@ -111,8 +116,9 @@ The app targets Vercel; any Node.js host that runs Next.js 16 should work. Befor
 | --- | --- |
 | `app/[lang]/` | The page and root layout, built for `/en` and `/id`. |
 | `app/api/analyze/` | The analysis route. |
-| `proxy.ts` | Sends paths without a language to the saved one, or to `/en`. |
+| `proxy.ts` | Sends paths without a language to the saved one, or to `/en`. Tested in `proxy.test.ts`. |
 | `components/` | The dashboard and its parts: upload, results, page images, settings, history. |
+| `components/test-utils/` | Test render helpers and fixtures. |
 | `lib/pdf/` | PDF text extraction and page rendering (pdf.js on the server). |
 | `lib/ats/` | Hidden-text rules, the scoring rubric, and report assembly. |
 | `lib/ai/` | Prompts, the model chain with failover, provider requests, the custom endpoint guard, answer parsing, and the counters. |
@@ -121,6 +127,7 @@ The app targets Vercel; any Node.js host that runs Next.js 16 should work. Befor
 | `lib/db/` | The IndexedDB schema (Dexie). |
 | `lib/i18n/` | Interface dictionaries, language negotiation, and date and size formatting. |
 | `types/` | Shared types for the API, the report, and storage. |
+| `test/e2e/` | `workflow.e2e.js`, the end-to-end user journey run through the Playwright MCP. |
 
 The `.agents/`, `.codex/`, `.opencode/`, and `anti-slop/` folders hold the AI-assisted workflow used to
 build the project; the app does not use them.

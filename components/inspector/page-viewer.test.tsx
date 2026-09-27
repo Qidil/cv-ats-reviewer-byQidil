@@ -204,6 +204,26 @@ describe("PageViewer (FEAT-07, StyleGuide §5)", () => {
     expect(scrollTo).toHaveBeenCalledWith({ top: 505, left: -130, behavior: "smooth" });
   });
 
+  it("draws one box for cards that quote the same line, led by the most urgent card (DELTA-63)", () => {
+    const line = { left: 10, top: 60, width: 40, height: 2 };
+    const shared: InspectorMark[] = [
+      { id: "sug-07", priority: "low", title: "Shorten the line", pageNumber: 1, rects: [line] },
+      { id: "sug-05", priority: "high", title: "Use an active verb", pageNumber: 1, rects: [{ ...line, left: 10.01 }] },
+    ];
+    const { onSelectHighlight, ref } = renderViewer({ marks: [...marks, ...shared] });
+    const box = screen.getByRole("button", { name: "Must change: Use an active verb; Optional: Shorten the line" });
+
+    expect(document.getElementById("t-highlight-sug-07")).toBeNull();
+    expect(box.id).toBe("t-highlight-sug-05");
+    expect(box.className).toContain("border-critical-strong");
+    fireEvent.click(box);
+    expect(onSelectHighlight).toHaveBeenCalledWith("sug-05");
+
+    act(() => ref.current?.showHighlight("sug-07"));
+    // The pulse gives the button a new key, so it is looked up again.
+    expect(document.getElementById("t-highlight-sug-05")?.className).toContain("border-[2.5px]");
+  });
+
   it("keeps the pointed box's border thick for 1.5 s, with and without motion (G5-05)", () => {
     vi.useFakeTimers();
     const { ref } = renderViewer({ reduceMotion: true });

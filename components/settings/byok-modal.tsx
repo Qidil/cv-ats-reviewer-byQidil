@@ -59,6 +59,8 @@ function ByokForm({ onKeyChanged }: { onKeyChanged: () => void }) {
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [problem, setProblem] = useState<Problem>(null);
   const mounted = useRef(true);
+  /** G6-07: every edit starts a new round, so a test still answering for the old values is dropped. */
+  const testRound = useRef(0);
   const keyField = useRef<HTMLInputElement>(null);
   const modelField = useRef<HTMLInputElement>(null);
   const baseUrlField = useRef<HTMLInputElement>(null);
@@ -88,6 +90,7 @@ function ByokForm({ onKeyChanged }: { onKeyChanged: () => void }) {
   }, []);
 
   const resetFeedback = () => {
+    testRound.current += 1;
     setTest({ kind: "idle" });
     setSaveState("idle");
     setProblem(null);
@@ -114,10 +117,11 @@ function ByokForm({ onKeyChanged }: { onKeyChanged: () => void }) {
       show(found);
       return;
     }
+    const round = ++testRound.current;
     setTest({ kind: "testing" });
     const result = await testPersonalKey({ apiKey: typedKey, model, baseUrl });
-    // The dialog may have closed while the provider answered.
-    if (mounted.current) {
+    // The dialog may have closed, or the fields changed, while the provider answered.
+    if (mounted.current && testRound.current === round) {
       setTest({ kind: "done", result });
     }
   };
@@ -145,6 +149,7 @@ function ByokForm({ onKeyChanged }: { onKeyChanged: () => void }) {
     setModel("");
     setBaseUrl("");
     setProblem(null);
+    testRound.current += 1;
     setTest({ kind: "idle" });
     setSaveState("removed");
     onKeyChanged();
@@ -243,9 +248,15 @@ function ByokForm({ onKeyChanged }: { onKeyChanged: () => void }) {
           aria-invalid={problem === "model"}
           aria-describedby={describedBy(ids.modelHint, problem === "model" && ids.problem)}
           onChange={(event) => {
-            setModel(event.target.value);
-            setProblem(null);
-            setSaveState("idle");
+            const next = event.target.value;
+            setModel(next);
+            // The test checks the provider, so its result (and the model list) holds until the model changes which one.
+            if (personalKeyProvider({ apiKey, model: next, baseUrl }) !== provider) {
+              resetFeedback();
+            } else {
+              setProblem(null);
+              setSaveState("idle");
+            }
           }}
           className={cn(fieldClass, "font-mono")}
         />
@@ -293,8 +304,7 @@ function ByokForm({ onKeyChanged }: { onKeyChanged: () => void }) {
       </div>
 
       {problem !== null ? (
-        // Error text uses red-400: text-critical is under 4.5:1 on the dialog's elevated surface.
-        <p id={ids.problem} role="alert" className="text-small text-red-400">
+        <p id={ids.problem} role="alert" className="text-small text-critical-text">
           {problemText}
         </p>
       ) : null}
@@ -303,7 +313,7 @@ function ByokForm({ onKeyChanged }: { onKeyChanged: () => void }) {
         <Button variant="secondary" disabled={typedKey === "" || test.kind === "testing"} onClick={() => void runTest()}>
           {t.settings.test}
         </Button>
-        <p role="status" className={cn("text-small", testFailed ? "text-red-400" : "text-secondary")}>
+        <p role="status" className={cn("text-small", testFailed ? "text-critical-text" : "text-secondary")}>
           {testMessage}
         </p>
       </div>
@@ -317,7 +327,7 @@ function ByokForm({ onKeyChanged }: { onKeyChanged: () => void }) {
             {t.settings.remove}
           </Button>
         ) : null}
-        <p role="status" className={cn("text-small", saveState === "failed" ? "text-red-400" : "text-secondary")}>
+        <p role="status" className={cn("text-small", saveState === "failed" ? "text-critical-text" : "text-secondary")}>
           {saveMessage}
         </p>
       </div>

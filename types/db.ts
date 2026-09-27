@@ -10,11 +10,11 @@ export interface CvEntity {
   fileSize: number;
   uploadedAt: string;
   pageCount: number;
-  /** Hidden text included; stored for debugging and never rendered. */
+  /** Hidden text included; read only to place highlight boxes, never rendered as a whole. */
   rawText: string;
   /** Hidden text in [IGNORED] blocks; never sent to the AI and never rendered. */
   sanitizedText: string;
-  /** The only CV text the interface may show. */
+  /** The CV text the interface may show; the hidden-text card may also quote what it found (DELTA-59). */
   visibleText: string;
   source: "operator-list" | "text-content";
   hiddenText: HiddenTextSummary;

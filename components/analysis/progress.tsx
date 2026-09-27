@@ -14,12 +14,14 @@ export function AnalysisProgress({
   stage,
   fraction,
   startedAt,
+  canCancel = true,
   onCancel,
   ref,
 }: {
   stage: "uploading" | "processing";
   fraction: number;
   startedAt: number;
+  canCancel?: boolean;
   onCancel: () => void;
   ref?: Ref<HTMLDivElement>;
 }) {
@@ -65,7 +67,7 @@ export function AnalysisProgress({
         <Skeleton className="mt-3 h-1.5 rounded-full bg-action" />
       )}
       <p className="mt-3 text-small text-secondary">{t.progress.note}</p>
-      <Button variant="secondary" className="mt-4" onClick={onCancel}>
+      <Button variant="secondary" className="mt-4" disabled={!canCancel} onClick={onCancel}>
         {t.actions.cancel}
       </Button>
     </div>

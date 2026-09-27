@@ -6,10 +6,10 @@ import {
   createMemoryStore,
   createUpstashStore,
   quotaKey,
-  readQuota,
-  recordAnalysis,
   recordRequest,
+  releaseAnalysis,
   requestKey,
+  reserveAnalysis,
   type QuotaStatus,
   type QuotaStore,
   type RequestWindow,
@@ -61,6 +61,8 @@ export interface AnalyzeInput {
   clientIp: string | null;
   /** From Accept-Language (BR-13): the language of the rubric text, the prompt, and the AI prose. */
   language: Language;
+  /** DELTA-57: fires when the client cancels or disconnects; the work stops and nothing is counted. */
+  signal?: AbortSignal;
 }
 
 export interface AnalyzeDependencies {
@@ -284,8 +286,8 @@ function withPreviews(document: AnalyzedDocument, previews: readonly PagePreview
 }
 
 /**
- * One request per analysis (P3-D3): the quota is checked before any work and counted only on
- * success; the AI sees visibleText only.
+ * One request per analysis (P3-D3): the daily slot is reserved before any work and given back when
+ * the analysis fails or is cancelled (DELTA-56, DELTA-57); the AI sees visibleText only.
  */
 export async function runAnalysis(input: AnalyzeInput, deps: AnalyzeDependencies): Promise<AnalyzeResponse> {
   const now = deps.now ?? Date.now;
@@ -298,95 +300,103 @@ export async function runAnalysis(input: AnalyzeInput, deps: AnalyzeDependencies
   }
 
   const builtIn = request.personalKey === null ? builtInKey(deps, input.clientIp, startedAt) : null;
-  let before: QuotaStatus | null = null;
+  let quota: QuotaStatus | null = null;
   if (builtIn !== null) {
     try {
-      before = await readQuota(builtIn.store, builtIn.counterKey, config.dailyLimit, startedAt);
+      quota = await reserveAnalysis(builtIn.store, builtIn.counterKey, config.dailyLimit, startedAt);
     } catch (error) {
       throw new ApiError("QUOTA_CHECK_FAILED", { cause: error });
     }
-    if (before.remaining === 0) {
-      throw new ApiError("DAILY_QUOTA_EXCEEDED", { resetsAt: before.resetsAt });
-    }
   }
-  await limitRequests(deps, input.clientIp, startedAt, request.provider);
+  // A refund that fails costs the user one slot for the day; it never replaces the real error.
+  const giveBack = () =>
+    builtIn === null ? Promise.resolve() : releaseAnalysis(builtIn.store, builtIn.counterKey).catch(() => undefined);
+  if (quota !== null && quota.used > quota.limit) {
+    await giveBack();
+    throw new ApiError("DAILY_QUOTA_EXCEEDED", { resetsAt: quota.resetsAt });
+  }
 
-  const pdfBytes = new Uint8Array(await request.file.arrayBuffer());
-  const extraction = await extractPdf(pdfBytes, { timeoutMs: EXTRACTION_TIMEOUT_MS });
-  const document = fitDocument(extraction);
-  const deterministic = analyzeCv(extraction.visibleText, request.jobDescription, extraction.metadata, input.language);
-  const promptInput: PromptInput = {
-    mode: request.mode,
-    language: input.language,
-    cvText: extraction.visibleText,
-    targetJobDescription: request.jobDescription,
-    targetJobTitle: request.jobTitle,
-  };
-  const apiKey = request.personalKey ?? builtIn?.apiKey;
-  if (apiKey === undefined) {
-    throw new ApiError("SERVICE_NOT_CONFIGURED");
-  }
-  const firstModel = request.personalKey !== null && request.customModel !== null ? request.customModel : config.primaryModel;
-  // ADR-009: another provider runs only the user's model, a second time only after a transient failure.
-  const singleModel = request.personalKey !== null && request.provider !== "openrouter" ? request.customModel : null;
-  // The chain starts first so its request is on the wire before rendering takes the thread.
-  const chainPromise = runModelChain<AiReport>({
-    apiKey,
-    keyOwner: request.personalKey === null ? "server" : "user",
-    provider: PROVIDERS[request.provider],
-    baseUrl: request.baseUrl,
-    models:
-      singleModel !== null
-        ? [singleModel, singleModel]
-        : [firstModel, ...config.fallbackModels.filter((model) => model !== firstModel)],
-    stopOnModelError: singleModel !== null,
-    budgetMs: config.budgetMs,
-    buildMessages: (partialOutput) => buildMessages(promptInput, partialOutput),
-    parse: (content) => parseAiReport(content, request.mode, input.language),
-    fetch:
-      request.provider === "custom"
-        ? (deps.customFetch ?? ((url, init) => safeFetch(url, init, { allowPrivate: config.allowPrivateEndpoints })))
-        : deps.fetch,
-    now,
-  });
-  const stopRendering = new AbortController();
-  const previewsPromise = (deps.renderPreviews ?? renderPagePreviews)(pdfBytes, {
-    budgetBytes: MAX_PREVIEW_BYTES,
-    deadlineMs: PREVIEW_DEADLINE_MS,
-    signal: stopRendering.signal,
-  }).catch((): PagePreview[] => []);
-  let chain: Awaited<typeof chainPromise>;
   try {
-    chain = await chainPromise;
+    const { signal } = input;
+    await limitRequests(deps, input.clientIp, startedAt, request.provider);
+
+    const pdfBytes = new Uint8Array(await request.file.arrayBuffer());
+    const extraction = await extractPdf(pdfBytes, { timeoutMs: EXTRACTION_TIMEOUT_MS });
+    signal?.throwIfAborted();
+    const document = fitDocument(extraction);
+    const deterministic = analyzeCv(extraction.visibleText, request.jobDescription, extraction.metadata, input.language);
+    const promptInput: PromptInput = {
+      mode: request.mode,
+      language: input.language,
+      cvText: extraction.visibleText,
+      targetJobDescription: request.jobDescription,
+      targetJobTitle: request.jobTitle,
+    };
+    const apiKey = request.personalKey ?? builtIn?.apiKey;
+    if (apiKey === undefined) {
+      throw new ApiError("SERVICE_NOT_CONFIGURED");
+    }
+    const firstModel = request.personalKey !== null && request.customModel !== null ? request.customModel : config.primaryModel;
+    // ADR-009: another provider runs only the user's model, a second time only after a transient failure.
+    const singleModel = request.personalKey !== null && request.provider !== "openrouter" ? request.customModel : null;
+    // The chain starts first so its request is on the wire before rendering takes the thread.
+    const chainPromise = runModelChain<AiReport>({
+      apiKey,
+      keyOwner: request.personalKey === null ? "server" : "user",
+      provider: PROVIDERS[request.provider],
+      baseUrl: request.baseUrl,
+      models:
+        singleModel !== null
+          ? [singleModel, singleModel]
+          : [firstModel, ...config.fallbackModels.filter((model) => model !== firstModel)],
+      stopOnModelError: singleModel !== null,
+      budgetMs: config.budgetMs,
+      buildMessages: (partialOutput) => buildMessages(promptInput, partialOutput),
+      parse: (content) => parseAiReport(content, request.mode, input.language),
+      fetch:
+        request.provider === "custom"
+          ? (deps.customFetch ?? ((url, init) => safeFetch(url, init, { allowPrivate: config.allowPrivateEndpoints })))
+          : deps.fetch,
+      now,
+      signal,
+    });
+    const stopRendering = new AbortController();
+    const stop = () => stopRendering.abort();
+    signal?.addEventListener("abort", stop, { once: true });
+    const previewsPromise = (deps.renderPreviews ?? renderPagePreviews)(pdfBytes, {
+      budgetBytes: MAX_PREVIEW_BYTES,
+      deadlineMs: PREVIEW_DEADLINE_MS,
+      signal: stopRendering.signal,
+    }).catch((): PagePreview[] => []);
+    let chain: Awaited<typeof chainPromise>;
+    try {
+      chain = await chainPromise;
+    } catch (error) {
+      stopRendering.abort();
+      throw error;
+    } finally {
+      signal?.removeEventListener("abort", stop);
+    }
+    const previews = await previewsPromise;
+    signal?.throwIfAborted();
+    const report = composeReport({ mode: request.mode, deterministic, ai: chain.result, extraction });
+
+    return {
+      mode: request.mode,
+      ...report,
+      document: withPreviews(document, previews),
+      meta: {
+        modelUsed: chain.modelUsed,
+        failoverOccurred: chain.failoverOccurred,
+        continuationOccurred: chain.continuationOccurred,
+        latencyMs: now() - startedAt,
+        quota,
+      },
+    };
   } catch (error) {
-    stopRendering.abort();
+    await giveBack();
     throw error;
   }
-  const previews = await previewsPromise;
-  const report = composeReport({ mode: request.mode, deterministic, ai: chain.result, extraction });
-
-  let quota: QuotaStatus | null = null;
-  if (builtIn !== null && before !== null) {
-    try {
-      quota = await recordAnalysis(builtIn.store, builtIn.counterKey, config.dailyLimit, now());
-    } catch {
-      // P3-D2: the analysis already succeeded, so a failed count must not discard it.
-      quota = { ...before, used: before.used + 1, remaining: Math.max(0, before.remaining - 1) };
-    }
-  }
-
-  return {
-    mode: request.mode,
-    ...report,
-    document: withPreviews(document, previews),
-    meta: {
-      modelUsed: chain.modelUsed,
-      failoverOccurred: chain.failoverOccurred,
-      continuationOccurred: chain.continuationOccurred,
-      latencyMs: now() - startedAt,
-      quota,
-    },
-  };
 }
 
 let developmentStore: QuotaStore | undefined;

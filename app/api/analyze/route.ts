@@ -98,11 +98,16 @@ export async function POST(request: Request): Promise<Response> {
         authorization: request.headers.get("authorization"),
         clientIp: clientIpFrom(request.headers),
         language,
+        signal: request.signal,
       },
       { config, quotaStore: defaultQuotaStore(config) },
     );
     return Response.json(result, { headers: { "Content-Language": language } });
   } catch (error) {
+    if (request.signal.aborted) {
+      // DELTA-57: the client cancelled or left, so nobody reads this answer and nothing went wrong.
+      return errorResponse(new ApiError("NETWORK_TIMEOUT"), language);
+    }
     const apiError = toApiError(error);
     if (apiError.code === "INTERNAL_ERROR") {
       // Only the error name: messages can quote model output, which can quote the CV (BR-06).

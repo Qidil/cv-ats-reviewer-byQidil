@@ -27,6 +27,8 @@ export interface ModelChainOptions<T> {
   parse: (content: string) => T;
   fetch?: FetchLike;
   now?: () => number;
+  /** DELTA-57: the client left; the running call is aborted and no further model is tried. */
+  signal?: AbortSignal;
 }
 
 export interface ModelChainResult<T> {
@@ -53,6 +55,7 @@ export async function runModelChain<T>(options: ModelChainOptions<T>): Promise<M
   let rejectedCount = 0;
 
   for (const model of options.models) {
+    options.signal?.throwIfAborted();
     const remaining = deadline - now();
     if (remaining <= 0) {
       throw new ApiError("NETWORK_TIMEOUT");
@@ -60,6 +63,7 @@ export async function runModelChain<T>(options: ModelChainOptions<T>): Promise<M
     const callMs = Math.min(remaining, MAX_CALL_MS);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), callMs);
+    const callSignal = options.signal ? AbortSignal.any([controller.signal, options.signal]) : controller.signal;
     let outcome: CallOutcome;
     try {
       const call = provider.buildCall({
@@ -72,12 +76,13 @@ export async function runModelChain<T>(options: ModelChainOptions<T>): Promise<M
         method: "POST",
         headers: call.headers,
         body: call.body,
-        signal: controller.signal,
+        signal: callSignal,
         // A followed redirect would carry the key header to another host (rules.md §4.2.7); the 3xx is read as a failed call.
         redirect: "manual",
       });
       outcome = await provider.readOutcome(response, options.keyOwner);
     } catch (error) {
+      options.signal?.throwIfAborted();
       // The custom endpoint guard refuses an address with the catalog error itself.
       if (error instanceof ApiError) {
         throw error;
@@ -86,6 +91,7 @@ export async function runModelChain<T>(options: ModelChainOptions<T>): Promise<M
     } finally {
       clearTimeout(timer);
     }
+    options.signal?.throwIfAborted();
     // An abort shows up as a failed fetch or an unreadable body. Only the end of the whole budget
     // stops the chain; a model that used up its own 60 s makes way for the next one.
     if (outcome.kind === "unavailable" && controller.signal.aborted && callMs === remaining) {

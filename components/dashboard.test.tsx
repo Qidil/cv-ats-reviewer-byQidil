@@ -30,11 +30,16 @@ vi.mock("@/lib/client/analyze", async (importOriginal) => ({
 
 vi.mock("@/lib/client/history", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/client/history")>();
-  return { ...actual, loadStoredAnalysis: vi.fn(actual.loadStoredAnalysis) };
+  return {
+    ...actual,
+    loadStoredAnalysis: vi.fn(actual.loadStoredAnalysis),
+    saveAnalysisResult: vi.fn(actual.saveAnalysisResult),
+  };
 });
 
 const send = vi.mocked(sendAnalysis);
 const loadStored = vi.mocked(loadStoredAnalysis);
+const saveResult = vi.mocked(saveAnalysisResult);
 const FAKE_KEY = "sk-or-v1-test-0000";
 
 /** Without page images: jsdom's Blob cannot pass fake-indexeddb's structured clone. */
@@ -77,6 +82,7 @@ beforeEach(async () => {
   await createStorage(getDb()).clearAll();
   send.mockReset();
   loadStored.mockClear();
+  saveResult.mockClear();
 });
 
 afterEach(() => {
@@ -256,5 +262,70 @@ describe("Dashboard", () => {
     expect(localStorage.getItem(LOCAL_STORAGE_KEYS.byokKey)).toBeNull();
     expect(screen.getByText("Key removed. Analyses now use the free quota.")).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("ends on a message when a successful answer lacks a part the result needs (G6-08)", async () => {
+    const outcome = success();
+    Reflect.deleteProperty(outcome.response.document, "pages");
+    send.mockResolvedValue(outcome);
+    renderWithI18n(<Dashboard />);
+    pickFile();
+    analyze();
+    expect(await screen.findByRole("alert")).toHaveTextContent("The server's answer could not be read. Try again.");
+    expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument();
+  });
+
+  it("returns to the start when the CV on screen is deleted from History (G6-10)", async () => {
+    const { cvId } = await storeAnalysis("cv-budi-santoso.pdf");
+    writeActiveCvId(cvId);
+    renderWithI18n(<Dashboard />);
+    expect(await screen.findByRole("heading", { name: "Result" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "History" }));
+    const drawer = within(screen.getByRole("dialog", { name: "History" }));
+    fireEvent.click(await drawer.findByRole("button", { name: "Delete: cv-budi-santoso.pdf" }));
+    fireEvent.click(drawer.getByRole("button", { name: "Delete" }));
+
+    expect(await screen.findByRole("button", { name: "Choose a file" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Result" })).not.toBeInTheDocument();
+    expect(within(screen.getByRole("main")).queryByText("cv-budi-santoso.pdf")).not.toBeInTheDocument();
+    await waitFor(() => expect(drawer.queryByText("cv-budi-santoso.pdf")).not.toBeInTheDocument());
+    expect(localStorage.getItem(LOCAL_STORAGE_KEYS.activeCvId)).toBeNull();
+  });
+
+  it("keeps an unsaved result on screen when every stored CV is deleted (G6-10)", async () => {
+    await storeAnalysis("cv-older.pdf");
+    saveResult.mockRejectedValueOnce(new Error("disk error"));
+    send.mockResolvedValue(success());
+    renderWithI18n(<Dashboard />);
+    pickFile();
+    analyze();
+    expect(await screen.findByText("This result could not be saved in History. It stays on screen until you leave the page.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "History" }));
+    const drawer = within(screen.getByRole("dialog", { name: "History" }));
+    fireEvent.click(await drawer.findByRole("button", { name: "Delete all" }));
+    fireEvent.click(drawer.getByRole("button", { name: "Delete" }));
+
+    await waitFor(async () => expect(await listHistory(createStorage(getDb()))).toHaveLength(0));
+    expect(screen.getByRole("heading", { name: "Result" })).toBeInTheDocument();
+  });
+
+  it("saves as a new CV when another tab deleted the stored one meanwhile (G6-10)", async () => {
+    send.mockResolvedValue(success());
+    renderWithI18n(<Dashboard />);
+    pickFile();
+    analyze();
+    expect(await screen.findByRole("heading", { name: "Result" })).toBeInTheDocument();
+    const [first] = await listHistory(createStorage(getDb()));
+    await createStorage(getDb()).deleteCv(first!.cv.id!);
+
+    fireEvent.click(screen.getByRole("button", { name: "Analyze again" }));
+    analyze();
+    expect(await screen.findByRole("heading", { name: "Result" })).toBeInTheDocument();
+    await waitFor(() => expect(saveResult).toHaveBeenCalledTimes(3));
+    const entries = await listHistory(createStorage(getDb()));
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.cv.id).not.toBe(first?.cv.id);
+    expect(localStorage.getItem(LOCAL_STORAGE_KEYS.activeCvId)).toBe(String(entries[0]?.cv.id));
+    expect(screen.queryByText(/could not be saved/)).not.toBeInTheDocument();
   });
 });

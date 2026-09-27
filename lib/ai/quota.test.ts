@@ -10,9 +10,10 @@ import {
   quotaIso,
   quotaKey,
   readQuota,
-  recordAnalysis,
   recordRequest,
+  releaseAnalysis,
   requestKey,
+  reserveAnalysis,
 } from "./quota";
 
 const LAST_SECOND_OF_DAY = Date.parse("2026-09-26T15:59:59Z"); // 23:59:59 GMT+8, 26 Sept
@@ -77,8 +78,8 @@ describe("memory store", () => {
       remaining: 10,
       resetsAt: "2026-09-27T00:00:00+08:00",
     });
-    await recordAnalysis(store, key, 10, clock);
-    expect(await recordAnalysis(store, key, 10, clock)).toMatchObject({ used: 2, remaining: 8 });
+    await reserveAnalysis(store, key, 10, clock);
+    expect(await reserveAnalysis(store, key, 10, clock)).toMatchObject({ used: 2, remaining: 8 });
 
     clock = nextResetMs(LAST_SECOND_OF_DAY) + 3600 * 1000;
     expect(await store.read(key)).toBe(0);
@@ -86,8 +87,21 @@ describe("memory store", () => {
 
   it("never reports a negative remaining count", async () => {
     const store = createMemoryStore(() => MIDNIGHT);
-    for (let i = 0; i < 3; i++) await recordAnalysis(store, "k", 2, MIDNIGHT);
+    for (let i = 0; i < 3; i++) await reserveAnalysis(store, "k", 2, MIDNIGHT);
     expect(await readQuota(store, "k", 2, MIDNIGHT)).toMatchObject({ used: 3, remaining: 0 });
+  });
+
+  it("gives a reserved slot back, and never counts below zero (DELTA-56)", async () => {
+    const store = createMemoryStore(() => MIDNIGHT);
+    await reserveAnalysis(store, "k", 10, MIDNIGHT);
+    await reserveAnalysis(store, "k", 10, MIDNIGHT);
+    await releaseAnalysis(store, "k");
+    expect(await store.read("k")).toBe(1);
+    await releaseAnalysis(store, "k");
+    await releaseAnalysis(store, "k");
+    await releaseAnalysis(store, "missing");
+    expect(await store.read("k")).toBe(0);
+    expect(await store.read("missing")).toBe(0);
   });
 });
 
@@ -153,7 +167,7 @@ describe("Upstash store", () => {
     const { calls, store } = upstash(Response.json([{ result: 4 }, { result: 1 }]));
     const expiresAt = Math.floor(nextResetMs(MIDNIGHT) / 1000) + 3600;
 
-    expect((await recordAnalysis(store, "k", 10, MIDNIGHT)).used).toBe(4);
+    expect((await reserveAnalysis(store, "k", 10, MIDNIGHT)).used).toBe(4);
     expect(calls[0]).toMatchObject({
       url: `${CONFIG.url}/pipeline`,
       body: [
@@ -161,6 +175,13 @@ describe("Upstash store", () => {
         ["EXPIREAT", "k", String(expiresAt), "NX"],
       ],
     });
+  });
+
+  it("gives a slot back with DECR (DELTA-56)", async () => {
+    const { calls, store } = upstash(Response.json({ result: 3 }));
+
+    await releaseAnalysis(store, "k");
+    expect(calls[0]).toMatchObject({ url: CONFIG.url, body: ["DECR", "k"] });
   });
 
   it("lets an hourly counter expire an hour after its window ends", async () => {

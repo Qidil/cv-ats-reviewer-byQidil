@@ -124,7 +124,7 @@ describe("safeFetch (T21, T27)", () => {
       resolve: resolveTo(PUBLIC, { address: "10.0.0.5", family: 4 }),
       request: fake.https,
     });
-    await expect(promise).rejects.toMatchObject({ code: "INVALID_INPUT" });
+    await expect(promise).rejects.toMatchObject({ code: "INVALID_INPUT", personalKey: true });
     expect(fake.calls).not.toHaveBeenCalled();
   });
 
@@ -132,7 +132,7 @@ describe("safeFetch (T21, T27)", () => {
     const fake = fakeRequest({ status: 200 });
     await expect(
       safeFetch("http://api.example.com/v1/models", {}, { resolve: resolveTo(PUBLIC), httpRequest: fake.http }),
-    ).rejects.toMatchObject({ code: "INVALID_INPUT" });
+    ).rejects.toMatchObject({ code: "INVALID_INPUT", personalKey: true });
     expect(fake.calls).not.toHaveBeenCalled();
   });
 
@@ -172,12 +172,15 @@ describe("safeFetch (T21, T27)", () => {
     expect(fake.calls).not.toHaveBeenCalled();
   });
 
-  it("refuses a host that does not exist, and an address with a login", async () => {
+  it("refuses a host that does not exist, and an address with a login, with the personal-key wording (G6-06)", async () => {
     const missing = Object.assign(new Error("getaddrinfo ENOTFOUND"), { code: "ENOTFOUND" });
     await expect(
       safeFetch("https://missing.example.com/v1", {}, { resolve: async () => Promise.reject(missing) }),
-    ).rejects.toMatchObject({ code: "INVALID_INPUT" });
-    await expect(safeFetch("https://user:secret@api.example.com/v1")).rejects.toMatchObject({ code: "INVALID_INPUT" });
+    ).rejects.toMatchObject({ code: "INVALID_INPUT", personalKey: true });
+    await expect(safeFetch("https://user:secret@api.example.com/v1")).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+      personalKey: true,
+    });
   });
 
   it("connects only to the checked address, however Node asks for it", async () => {
