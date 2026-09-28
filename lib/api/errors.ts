@@ -54,6 +54,14 @@ export const API_ERRORS: Readonly<Record<ApiErrorCode, ErrorSpec>> = {
       id: "Permintaan ditolak filter moderasi provider AI. Periksa isi CV atau deskripsi pekerjaan, lalu coba lagi.",
     },
   },
+  PROVIDER_REFUSED: {
+    status: 400,
+    retryable: false,
+    message: {
+      en: "Your AI provider refused this analysis request. Check the model ID and the endpoint address in Settings.",
+      id: "Provider AI Anda menolak permintaan analisis ini. Periksa ID model dan alamat endpoint di Pengaturan.",
+    },
+  },
   DAILY_QUOTA_EXCEEDED: {
     status: 429,
     retryable: false,

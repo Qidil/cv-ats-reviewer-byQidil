@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { ApiError } from "@/lib/api/errors";
 import type { ChatMessage } from "./prompts";
 import { PROVIDERS, type CallOutcome, type ProviderAdapter } from "./providers";
@@ -49,6 +50,7 @@ export async function runModelChain<T>(options: ModelChainOptions<T>): Promise<M
   const provider = options.provider ?? PROVIDERS.openrouter;
   const now = options.now ?? Date.now;
   const deadline = now() + options.budgetMs;
+  const sessionId = randomUUID();
   let partialOutput: string | null = null;
   let lastFailure: "MODEL_UNAVAILABLE" | "JSON_PARSE_FAILED" | "TOKEN_LENGTH_EXCEEDED" | null = null;
   let onlyRateLimited = true;
@@ -71,6 +73,7 @@ export async function runModelChain<T>(options: ModelChainOptions<T>): Promise<M
         model,
         messages: options.buildMessages(partialOutput),
         baseUrl: options.baseUrl ?? null,
+        sessionId,
       });
       const response = await fetchImpl(call.url, {
         method: "POST",
@@ -103,7 +106,8 @@ export async function runModelChain<T>(options: ModelChainOptions<T>): Promise<M
         throw new ApiError(outcome.code, { keyOwner: options.keyOwner });
       case "rejected":
         if (options.stopOnModelError) {
-          throw new ApiError("INVALID_INPUT", { keyOwner: options.keyOwner });
+          // B7-02: the provider refused this request itself; the PDF and job description are not the cause.
+          throw new ApiError("PROVIDER_REFUSED", { keyOwner: options.keyOwner });
         }
         rejectedCount += 1;
         continue;

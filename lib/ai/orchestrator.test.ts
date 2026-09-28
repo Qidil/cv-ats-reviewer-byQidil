@@ -28,6 +28,7 @@ interface Call {
   messages: ChatMessage[];
   body: Record<string, unknown>;
   authorization: string;
+  headers: Record<string, string>;
 }
 
 function chain(replies: Reply[], overrides: Partial<ModelChainOptions<{ ok: true }>> = {}) {
@@ -41,6 +42,7 @@ function chain(replies: Reply[], overrides: Partial<ModelChainOptions<{ ok: true
       messages: body.messages as ChatMessage[],
       body,
       authorization: headers.Authorization,
+      headers,
     });
     const reply = replies.shift() ?? httpError(503);
     if (reply instanceof Error) throw reply;
@@ -257,10 +259,36 @@ describe("runModelChain with one model of another provider (ADR-009)", () => {
     expect(calls).toHaveLength(2);
   });
 
-  it("ends at once on a 400, which the same model would repeat", async () => {
+  it("ends at once on a 400 with its own message, which the same model would repeat (B7-02)", async () => {
     const { calls, promise } = chain([httpError(400), completion(VALID)], single);
-    expect(await codeOf(promise)).toBe("INVALID_INPUT");
+    const error = (await promise.catch((caught: unknown) => caught)) as ApiError;
+    expect(error.code).toBe("PROVIDER_REFUSED");
+    expect(errorBody(error).error.message).toBe(
+      "Your AI provider refused this analysis request. Check the model ID and the endpoint address in Settings.",
+    );
+    expect(errorBody(error, "id").error.message).toBe(
+      "Provider AI Anda menolak permintaan analisis ini. Periksa ID model dan alamat endpoint di Pengaturan.",
+    );
     expect(calls).toHaveLength(1);
+  });
+
+  it.each([404, 302])("ends at once on a %s from a custom endpoint as a refusal (B7-02)", async (status) => {
+    const reply = status === 302 ? new Response(null, { status, headers: { location: "https://elsewhere.example" } }) : httpError(status);
+    const { calls, promise } = chain([reply, completion(VALID)], { ...single, provider: PROVIDERS.custom, baseUrl: "https://api.example.com/v1" });
+    expect(await codeOf(promise)).toBe("PROVIDER_REFUSED");
+    expect(calls).toHaveLength(1);
+  });
+
+  it("sends one session ID per analysis to a custom endpoint, the same on its second call (B7-01)", async () => {
+    const custom = { ...single, provider: PROVIDERS.custom, baseUrl: "https://opencode.ai/zen/go/v1" };
+    const first = chain([completion("{", "length"), completion(VALID)], custom);
+    await first.promise;
+    const second = chain([completion(VALID)], custom);
+    await second.promise;
+    const [a, b] = first.calls.map((item) => item.headers["x-opencode-session"]);
+    expect(a).toMatch(/^[0-9a-f-]{36}$/);
+    expect(b).toBe(a);
+    expect(second.calls[0]?.headers["x-opencode-session"]).not.toBe(a);
   });
 
   it("ends at once on a 429 with the personal-key wording", async () => {

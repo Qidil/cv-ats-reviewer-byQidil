@@ -27,6 +27,7 @@ const FILE_CODES: ReadonlySet<ApiErrorCode> = new Set([
 const KEY_CODES: ReadonlySet<ApiErrorCode> = new Set([
   "AUTH_INVALID_KEY",
   "CREDITS_EXHAUSTED",
+  "PROVIDER_REFUSED",
   "DAILY_QUOTA_EXCEEDED",
   "RATE_LIMITED_429",
   "QUOTA_CHECK_FAILED",
@@ -102,6 +103,7 @@ export function ErrorNotice({
         buttons.push(settings, removeKey);
         break;
       case "CREDITS_EXHAUSTED":
+      case "PROVIDER_REFUSED":
         buttons.push(settings);
         break;
       case "INVALID_INPUT":

@@ -75,6 +75,14 @@ describe("ErrorNotice", () => {
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
+  it("sends a provider refusal to Settings, and clears it once the key settings change (B7-02)", () => {
+    const { onOpenSettings } = renderNotice(apiError("PROVIDER_REFUSED"), { usingOwnKey: true });
+    expect(screen.getByRole("alert")).toHaveTextContent("Server message for PROVIDER_REFUSED.");
+    fireEvent.click(screen.getByRole("button", { name: "Open Settings" }));
+    expect(onOpenSettings).toHaveBeenCalled();
+    expect(isKeyError(apiError("PROVIDER_REFUSED"))).toBe(true);
+  });
+
   it("offers Settings when this server cannot call custom endpoints (DELTA-52)", () => {
     renderNotice(apiError("SERVICE_NOT_CONFIGURED"), { usingOwnKey: true });
     expect(screen.getByRole("button", { name: "Open Settings" })).toBeInTheDocument();

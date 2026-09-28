@@ -42,7 +42,8 @@ export interface ProviderCall {
 
 export interface ProviderAdapter {
   id: KeyProvider;
-  buildCall(input: { apiKey: string; model: string; messages: ChatMessage[]; baseUrl: string | null }): ProviderCall;
+  /** `sessionId` is the same for every call of one analysis. */
+  buildCall(input: { apiKey: string; model: string; messages: ChatMessage[]; baseUrl: string | null; sessionId?: string }): ProviderCall;
   readOutcome(response: Response, keyOwner: "user" | "server"): Promise<CallOutcome>;
 }
 
@@ -139,17 +140,33 @@ function jsonHeaders(apiKey: string): Record<string, string> {
   return { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" };
 }
 
-function chatCompletions(id: KeyProvider, url: (baseUrl: string | null) => string, extra: (model: string) => object): ProviderAdapter {
+function chatCompletions(
+  id: KeyProvider,
+  url: (baseUrl: string | null) => string,
+  extra: (model: string) => object,
+  extraHeaders: (sessionId: string | undefined) => Record<string, string> = () => ({}),
+): ProviderAdapter {
   return {
     id,
-    buildCall: ({ apiKey, model, messages, baseUrl }) => ({
+    buildCall: ({ apiKey, model, messages, baseUrl, sessionId }) => ({
       url: url(baseUrl),
-      headers: jsonHeaders(apiKey),
+      headers: { ...jsonHeaders(apiKey), ...extraHeaders(sessionId) },
       body: JSON.stringify({ model, messages, ...extra(model) }),
     }),
     readOutcome: (response, keyOwner) => readChatCompletion(response, id, keyOwner),
   };
 }
+
+/**
+ * B7-01: gateways in front of many models route by a client name and a session ID; OpenCode Go refuses
+ * a request without `x-opencode-session` (400 MissingSessionID). Other OpenAI-compatible servers ignore
+ * both headers. The ID is random per analysis and says nothing about the user.
+ */
+const CLIENT_NAME = "cv-ats-reviewer/0.1.0";
+const customHeaders = (sessionId: string | undefined): Record<string, string> => ({
+  "User-Agent": CLIENT_NAME,
+  ...(sessionId ? { "x-opencode-session": sessionId } : {}),
+});
 
 const standardParameters = () => ({ temperature: TEMPERATURE, max_tokens: MAX_OUTPUT_TOKENS });
 
@@ -230,5 +247,6 @@ export const PROVIDERS: Readonly<Record<KeyProvider, ProviderAdapter>> = {
       return `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
     },
     standardParameters,
+    customHeaders,
   ),
 };

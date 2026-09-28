@@ -8,8 +8,8 @@ const MESSAGES: ChatMessage[] = [
   { role: "user", content: "cv" },
 ];
 
-function call(provider: KeyProvider, baseUrl: string | null = null) {
-  const built = PROVIDERS[provider].buildCall({ apiKey: "test-key", model: "test-model", messages: MESSAGES, baseUrl });
+function call(provider: KeyProvider, baseUrl: string | null = null, sessionId?: string) {
+  const built = PROVIDERS[provider].buildCall({ apiKey: "test-key", model: "test-model", messages: MESSAGES, baseUrl, sessionId });
   return { ...built, body: JSON.parse(built.body) as Record<string, unknown> };
 }
 
@@ -71,6 +71,21 @@ describe("provider requests (ADR-009)", () => {
     expect(call("custom", "https://api.example.com/v1").url).toBe("https://api.example.com/v1/chat/completions");
     expect(call("custom", "https://api.example.com/v1/").url).toBe("https://api.example.com/v1/chat/completions");
     expect(() => call("custom")).toThrow();
+  });
+
+  it("names the app and sends the analysis session to a custom endpoint, which OpenCode Go requires (B7-01)", () => {
+    const { headers } = call("custom", "https://opencode.ai/zen/go/v1", "session-1");
+    expect(headers).toMatchObject({
+      Authorization: "Bearer test-key",
+      "User-Agent": "cv-ats-reviewer/0.1.0",
+      "x-opencode-session": "session-1",
+    });
+  });
+
+  it("keeps the session header away from the fixed provider addresses", () => {
+    for (const provider of ["openrouter", "openai", "groq", "anthropic"] as const) {
+      expect(call(provider, null, "session-1").headers).not.toHaveProperty("x-opencode-session");
+    }
   });
 });
 
