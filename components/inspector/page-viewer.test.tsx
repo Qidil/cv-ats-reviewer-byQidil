@@ -149,6 +149,16 @@ describe("PageViewer (FEAT-07, StyleGuide §5)", () => {
     expect(list).toHaveStyle({ width: "150%" });
   });
 
+  it("marks the current page number in the pager, not the previous arrow", () => {
+    renderViewer();
+    const pager = within(screen.getByRole("navigation", { name: "Pages" }));
+    expect(pager.getByRole("button", { name: "Page 1 of 3" })).toHaveAttribute("aria-current", "page");
+    expect(pager.getByRole("button", { name: "Previous page" })).not.toHaveAttribute("aria-current");
+    fireEvent.click(pager.getByRole("button", { name: "Page 3 of 3" }));
+    expect(pager.getByRole("button", { name: "Page 3 of 3" })).toHaveAttribute("aria-current", "page");
+    expect(pager.getByRole("button", { name: "Page 1 of 3" })).not.toHaveAttribute("aria-current");
+  });
+
   it("draws each highlight at its share of the image in page order, red for high and yellow otherwise (BR-08)", () => {
     renderViewer();
     const [first, second, third] = screen.getAllByRole("button", { name: /^(Must change|Suggested|Optional): / });

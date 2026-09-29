@@ -4,7 +4,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { useI18n } from "@/components/i18n-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DrawablyCard } from "@/lib/drawably";
+import { DrawablyCard, DrawablyDivider, DrawablyList, DrawablyQuote } from "@/lib/drawably";
 import { cn } from "@/lib/cn";
 import { fillTemplate } from "@/lib/i18n/format";
 import type { Suggestion } from "@/types/ats";
@@ -21,12 +21,12 @@ export function WeaknessList({ weaknesses }: { weaknesses: readonly string[] }) 
         {t.results.weaknesses}
       </h3>
       <DrawablyCard className="p-4">
-        <ul className="list-disc space-y-2 pl-5 text-secondary marker:text-muted">
+        <DrawablyList marker="dash" className="space-y-2 text-secondary">
           {weaknesses.map((weakness, index) => (
             // AI text can repeat; the list never reorders, so the index is a stable key.
             <li key={index}>{weakness}</li>
           ))}
-        </ul>
+        </DrawablyList>
       </DrawablyCard>
     </section>
   );
@@ -84,29 +84,33 @@ export function SuggestionList({ suggestions, link }: { suggestions: readonly Su
                 </div>
                 <p className="mt-2 text-secondary">{suggestion.description}</p>
                 {suggestion.targetTextSnippet ? (
-                  <figure className="mt-3 rounded-r-md border-l-2 border-ink bg-paper px-3 py-2">
-                    <figcaption className="text-small text-muted">
-                      {t.results.quote}
-                      {suggestion.pageNumber ? ` · ${fillTemplate(t.results.page, { page: suggestion.pageNumber })}` : ""}
-                    </figcaption>
+                  <DrawablyQuote className="mt-3 px-3 py-2">
                     {/* Verbatim from the CV (BR-13): never translated or tidied. */}
-                    <blockquote className="mt-1 font-mono text-code break-words whitespace-pre-wrap text-primary">
+                    <span className="block font-mono text-code break-words whitespace-pre-wrap text-primary">
                       {suggestion.targetTextSnippet}
-                    </blockquote>
-                    {link?.placed.has(suggestion.id) ? (
-                      <Button
-                        variant="secondary"
-                        className="mt-2"
-                        onClick={() => link.onShowInCv(suggestion.id)}
-                        onMouseEnter={() => link.onEmphasize(suggestion.id)}
-                        onMouseLeave={() => link.onEmphasize(null)}
-                        onFocus={() => link.onEmphasize(suggestion.id)}
-                        onBlur={() => link.onEmphasize(null)}
-                      >
-                        {t.inspector.showInCv}
-                      </Button>
-                    ) : null}
-                  </figure>
+                    </span>
+                    <DrawablyDivider className="my-2" />
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-small text-muted">
+                        {t.results.quote}
+                        {suggestion.pageNumber
+                          ? ` · ${fillTemplate(t.results.page, { page: suggestion.pageNumber })}`
+                          : ""}
+                      </span>
+                      {link?.placed.has(suggestion.id) ? (
+                        <Button
+                          variant="secondary"
+                          onClick={() => link.onShowInCv(suggestion.id)}
+                          onMouseEnter={() => link.onEmphasize(suggestion.id)}
+                          onMouseLeave={() => link.onEmphasize(null)}
+                          onFocus={() => link.onEmphasize(suggestion.id)}
+                          onBlur={() => link.onEmphasize(null)}
+                        >
+                          {t.inspector.showInCv}
+                        </Button>
+                      ) : null}
+                    </div>
+                  </DrawablyQuote>
                 ) : null}
               </DrawablyCard>
             </motion.li>

@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { useI18n } from "@/components/i18n-provider";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
+import { DrawablyInput } from "@/lib/drawably";
 import { cn } from "@/lib/cn";
 import {
   clearPersonalKey,
@@ -21,9 +22,6 @@ import { MAX_BASE_URL_CHARS, parseCustomBaseUrl } from "@/types/api";
 
 /** api.md: the server refuses a model name over 200 characters. */
 const MODEL_MAX = 200;
-
-const fieldClass =
-  "min-h-11 w-full min-w-0 rounded-md border border-strong bg-app px-3 text-body text-primary placeholder:text-muted";
 
 type TestState = { kind: "idle" } | { kind: "testing" } | { kind: "done"; result: KeyTestResult };
 type SaveState = "idle" | "saved" | "failed" | "removed";
@@ -200,8 +198,9 @@ function ByokForm({ onKeyChanged }: { onKeyChanged: () => void }) {
           {t.settings.keyLabel}
         </label>
         <div className="flex gap-2">
-          <input
+          <DrawablyInput
             ref={keyField}
+            className="min-w-0 flex-1 font-mono"
             id={ids.key}
             type={revealed ? "text" : "password"}
             value={apiKey}
@@ -215,7 +214,6 @@ function ByokForm({ onKeyChanged }: { onKeyChanged: () => void }) {
               setApiKey(event.target.value);
               resetFeedback();
             }}
-            className={cn(fieldClass, "font-mono")}
           />
           <Button variant="secondary" aria-controls={ids.key} onClick={() => setRevealed((value) => !value)}>
             {revealed ? t.settings.hide : t.settings.show}
@@ -234,8 +232,9 @@ function ByokForm({ onKeyChanged }: { onKeyChanged: () => void }) {
         <label htmlFor={ids.model} className="mb-1.5 block text-small font-medium">
           {needsModel ? t.settings.modelLabelRequired : t.settings.modelLabel}
         </label>
-        <input
+        <DrawablyInput
           ref={modelField}
+          className="w-full font-mono"
           id={ids.model}
           value={model}
           list={suggestions.length > 0 ? ids.models : undefined}
@@ -258,7 +257,6 @@ function ByokForm({ onKeyChanged }: { onKeyChanged: () => void }) {
               setSaveState("idle");
             }
           }}
-          className={cn(fieldClass, "font-mono")}
         />
         {suggestions.length > 0 ? (
           <datalist id={ids.models}>
@@ -276,8 +274,9 @@ function ByokForm({ onKeyChanged }: { onKeyChanged: () => void }) {
         <label htmlFor={ids.baseUrl} className="mb-1.5 block text-small font-medium">
           {t.settings.baseUrlLabel}
         </label>
-        <input
+        <DrawablyInput
           ref={baseUrlField}
+          className="w-full font-mono"
           id={ids.baseUrl}
           type="url"
           inputMode="url"
@@ -296,7 +295,6 @@ function ByokForm({ onKeyChanged }: { onKeyChanged: () => void }) {
             setBaseUrl(event.target.value);
             resetFeedback();
           }}
-          className={cn(fieldClass, "font-mono")}
         />
         <p id={ids.baseUrlHint} className="mt-1.5 text-small text-secondary">
           {t.settings.baseUrlHint}

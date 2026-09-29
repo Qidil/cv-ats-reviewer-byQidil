@@ -2,6 +2,7 @@
 
 import { ChevronDown } from "lucide-react";
 import { useI18n } from "@/components/i18n-provider";
+import { Badge } from "@/components/ui/badge";
 import { DrawablyCard } from "@/lib/drawably";
 import { fillTemplate } from "@/lib/i18n/format";
 import { SUGGESTED_JOB_COUNT, type SuggestedJob } from "@/types/ats";
@@ -39,17 +40,29 @@ function JobCard({ job }: { job: SuggestedJob }) {
               className="mt-0.5 size-4 shrink-0 text-secondary transition-transform group-open:rotate-180 motion-reduce:transition-none"
             />
           </summary>
-          <dl className="space-y-2 px-4 pb-4 text-small">
+          <dl className="space-y-3 px-4 pb-4 text-small">
             {job.keyStrengths.length > 0 ? (
               <div>
                 <dt className="text-muted">{t.results.strengths}</dt>
-                <dd className="text-secondary">{job.keyStrengths.join(", ")}</dd>
+                <dd className="mt-1.5 flex flex-wrap gap-1.5">
+                  {job.keyStrengths.map((skill) => (
+                    <Badge key={skill} tone="pass">
+                      {skill}
+                    </Badge>
+                  ))}
+                </dd>
               </div>
             ) : null}
             {job.missingSkills.length > 0 ? (
               <div>
                 <dt className="text-muted">{t.results.missingSkills}</dt>
-                <dd className="text-secondary">{job.missingSkills.join(", ")}</dd>
+                <dd className="mt-1.5 flex flex-wrap gap-1.5">
+                  {job.missingSkills.map((skill) => (
+                    <Badge key={skill} tone="advisory">
+                      {skill}
+                    </Badge>
+                  ))}
+                </dd>
               </div>
             ) : null}
           </dl>

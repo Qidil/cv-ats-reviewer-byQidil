@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useId } from "react";
-import { LANGUAGE_COOKIE, LANGUAGES, type Language } from "@/lib/i18n/language";
+import { usePathname, useRouter } from "next/navigation";
+import { useId, type ChangeEvent } from "react";
+import { DrawablySelect } from "@/lib/drawably";
+import { LANGUAGE_COOKIE, LANGUAGES, isLanguage, type Language } from "@/lib/i18n/language";
 import { cn } from "@/lib/cn";
 import { useI18n } from "./i18n-provider";
 
@@ -12,84 +12,67 @@ function remember(language: Language) {
 }
 
 /**
- * StyleGuide §7.6: two links, each named in its own language. Locked while an analysis runs,
- * because leaving the route would drop it; the locked option stays focusable so the reason
- * shows on focus as well as on hover.
+ * StyleGuide §8.4: a compact dropdown showing only the EN and ID tags. It keeps the saved cookie,
+ * the current path, and the lock while an analysis runs; a disabled select cannot take focus, so
+ * the reason appears on hover and is wired through aria-describedby for screen readers.
  */
 export function LanguageSwitcher({ locked }: { locked: boolean }) {
   const { language: current, t } = useI18n();
   const noteId = useId();
   const pathname = usePathname() || "";
+  const router = useRouter();
 
-  const getHref = (targetLang: Language) => {
+  const hrefFor = (target: Language) => {
     if (!pathname || pathname === `/${current}`) {
-      return `/${targetLang}`;
+      return `/${target}`;
     }
     if (pathname.startsWith(`/${current}/`)) {
-      return `/${targetLang}${pathname.slice(current.length + 1)}`;
+      return `/${target}${pathname.slice(current.length + 1)}`;
     }
-    return `/${targetLang}`;
+    return `/${target}`;
+  };
+
+  const change = (event: ChangeEvent<HTMLSelectElement>) => {
+    const target = event.target.value;
+    if (!isLanguage(target) || target === current) {
+      return;
+    }
+    remember(target);
+    router.push(hrefFor(target));
   };
 
   return (
-    <nav aria-label={t.header.languageGroup} className="group relative">
-      <ul className="flex rounded-md border border-subtle p-0.5">
-        {LANGUAGES.map((language) => {
-          const label = (
-            <>
-              <span aria-hidden className="sm:hidden">
-                {t.languageCodes[language]}
-              </span>
-              <span className="sr-only sm:not-sr-only">{t.languageNames[language]}</span>
-            </>
-          );
-          const base = "flex min-h-11 min-w-11 items-center justify-center rounded px-2.5 text-small font-medium";
-          if (language === current) {
-            return (
-              <li key={language}>
-                <span aria-current="true" lang={language} className={cn(base, "bg-surface-elevated text-primary")}>
-                  {label}
-                </span>
-              </li>
-            );
-          }
-          return (
-            <li key={language}>
-              {locked ? (
-                <span
-                  role="link"
-                  tabIndex={0}
-                  aria-disabled="true"
-                  aria-describedby={noteId}
-                  lang={language}
-                  className={cn(base, "cursor-not-allowed text-muted")}
-                >
-                  {label}
-                </span>
-              ) : (
-                <Link
-                  href={getHref(language)}
-                  hrefLang={language}
-                  lang={language}
-                  onClick={() => remember(language)}
-                  className={cn(base, "text-secondary hover:bg-surface-elevated hover:text-primary")}
-                >
-                  {label}
-                </Link>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+    // While locked the select is disabled and cannot take focus, so the wrapper itself becomes
+    // focusable: focusing it reveals the reason on screen and reads it through aria-describedby.
+    <div
+      className="group relative"
+      role={locked ? "group" : undefined}
+      tabIndex={locked ? 0 : undefined}
+      aria-describedby={locked ? noteId : undefined}
+    >
+      <DrawablySelect
+        className={cn("w-20", locked && "opacity-60")}
+        aria-label={t.header.languageGroup}
+        aria-describedby={locked ? noteId : undefined}
+        disabled={locked}
+        value={current}
+        onChange={change}
+      >
+        {LANGUAGES.map((language) => (
+          <option key={language} value={language}>
+            {t.languageCodes[language]}
+          </option>
+        ))}
+      </DrawablySelect>
       {locked ? (
         <p
           id={noteId}
           role="tooltip"
-          className="pointer-events-none absolute top-full left-0 z-30 mt-2 hidden w-56 max-w-[calc(100vw-5rem)] rounded-md border border-subtle bg-surface-elevated px-3 py-2 text-small text-primary group-focus-within:block group-hover:block"
+          className="pointer-events-none absolute top-full right-0 z-20 mt-2 hidden w-64 border border-subtle bg-white px-3 py-2 text-small text-secondary shadow-md group-hover:block group-focus-within:block"
         >
           {t.header.languageLocked}
         </p>
       ) : null}
-    </nav>
+    </div>
   );
 }

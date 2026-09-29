@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { renderWithI18n } from "@/components/test-utils/render";
@@ -14,6 +14,11 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/en",
+  useRouter: () => ({ push: vi.fn() }),
+}));
+
 describe("Landing Page Components (FEAT-13, BR-14)", () => {
   it("renders full landing page in English", () => {
     renderWithI18n(<LandingPage />, "en");
@@ -22,10 +27,10 @@ describe("Landing Page Components (FEAT-13, BR-14)", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       "Audit your CV against real ATS criteria with precision",
     );
-    expect(screen.getByText("How the Engine Works")).toBeInTheDocument();
-    expect(screen.getByText("Evaluation Rubric & AI Constraints")).toBeInTheDocument();
-    expect(screen.getByText("Simulation Notice & Disclaimer")).toBeInTheDocument();
-    expect(screen.getByText("Frequently Asked Questions")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /How the Engine Works/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Evaluation Rubric & AI Constraints/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Simulation Notice & Disclaimer/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Frequently Asked Questions/ })).toBeInTheDocument();
   });
 
   it("renders full landing page in Indonesian", () => {
@@ -34,18 +39,43 @@ describe("Landing Page Components (FEAT-13, BR-14)", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       "Audit CV Anda dengan standar ATS nyata secara presisi",
     );
-    expect(screen.getByText("Bagaimana Mesin Ini Bekerja")).toBeInTheDocument();
-    expect(screen.getByText("Aspek Penilaian & Batasan Ketat AI")).toBeInTheDocument();
-    expect(screen.getByText("Pemberitahuan Simulasi & Penafian Resmi")).toBeInTheDocument();
-    expect(screen.getByText("Pertanyaan yang Sering Diajukan")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Bagaimana Mesin Ini Bekerja/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Aspek Penilaian & Batasan Ketat AI/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Pemberitahuan Simulasi & Penafian Resmi/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Pertanyaan yang Sering Diajukan/ })).toBeInTheDocument();
   });
 
-  it("contains direct CTA links to the analysis workspace", () => {
+  it("keeps the workspace CTA in the hero pointing at /app", () => {
     renderWithI18n(<LandingPage />, "en");
 
-    const ctas = screen.getAllByRole("link", { name: /Start Free Review|Open Reviewer/i });
-    expect(ctas.length).toBeGreaterThan(0);
-    expect(ctas.some((link) => link.getAttribute("href") === "/en/app")).toBe(true);
+    const cta = screen.getByRole("link", { name: "Start Free Review" });
+    expect(cta).toHaveAttribute("href", "/en/app");
+  });
+
+  it("opens the burger drawer with the section links and the workspace action", () => {
+    renderWithI18n(<LandingPage />, "en");
+
+    // Closed: the section links live only inside the drawer.
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Menu" }));
+    const drawer = within(screen.getByRole("dialog"));
+    expect(drawer.getByRole("link", { name: "How It Works" })).toHaveAttribute("href", "#how-it-works");
+    expect(drawer.getByRole("link", { name: "Scoring Rubric" })).toHaveAttribute("href", "#rubric");
+    expect(drawer.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "#privacy");
+    expect(drawer.getByRole("link", { name: "FAQ" })).toHaveAttribute("href", "#faq");
+    expect(drawer.getByRole("button", { name: "Open Reviewer" })).toBeInTheDocument();
+  });
+
+  it("closes the drawer when a section link is clicked", () => {
+    renderWithI18n(<LandingPage />, "en");
+
+    fireEvent.click(screen.getByRole("button", { name: "Menu" }));
+    const link = within(screen.getByRole("dialog")).getByRole("link", { name: "Privacy" });
+    // jsdom cannot scroll to the anchor; the drawer still closes on the click.
+    link.addEventListener("click", (event) => event.preventDefault());
+    fireEvent.click(link);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("toggles FAQ accordion questions and answers", () => {
@@ -56,11 +86,9 @@ describe("Landing Page Components (FEAT-13, BR-14)", () => {
     });
     expect(firstQuestion).toHaveAttribute("aria-expanded", "true");
 
-    // Click to collapse
     fireEvent.click(firstQuestion);
     expect(firstQuestion).toHaveAttribute("aria-expanded", "false");
 
-    // Click to expand again
     fireEvent.click(firstQuestion);
     expect(firstQuestion).toHaveAttribute("aria-expanded", "true");
   });

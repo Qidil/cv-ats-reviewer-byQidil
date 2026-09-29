@@ -1,70 +1,56 @@
 // @vitest-environment jsdom
 import { fireEvent, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderWithI18n } from "@/components/test-utils/render";
 import { LanguageSwitcher } from "./language-switcher";
 
 let mockPathname = "/en";
+const push = vi.fn();
 vi.mock("next/navigation", () => ({
   usePathname: () => mockPathname,
-}));
-
-// next/link needs the App Router; a plain anchor keeps the props that matter here.
-vi.mock("next/link", () => ({
-  default: ({ href, children, ...props }: { href: string; children: ReactNode }) => (
-    <a href={href} {...props}>
-      {children}
-    </a>
-  ),
+  useRouter: () => ({ push }),
 }));
 
 afterEach(() => {
   document.cookie = "lang=; path=/; max-age=0";
   mockPathname = "/en";
+  push.mockClear();
 });
 
-describe("LanguageSwitcher (StyleGuide §7.6)", () => {
-  it("marks the current language and links the other one in its own language", () => {
+describe("LanguageSwitcher dropdown (StyleGuide §8.4)", () => {
+  it("shows only the EN and ID tags with the current one selected", () => {
     renderWithI18n(<LanguageSwitcher locked={false} />);
-    expect(screen.getByRole("navigation", { name: "Language" })).toBeInTheDocument();
-    expect(screen.getByText("English").closest("[aria-current]")).toHaveAttribute("lang", "en");
-    const other = screen.getByRole("link", { name: "Bahasa Indonesia" });
-    expect(other).toHaveAttribute("href", "/id");
-    expect(other).toHaveAttribute("hreflang", "id");
-    expect(other).toHaveAttribute("lang", "id");
+    const select = screen.getByRole("combobox", { name: "Language" });
+    expect(select).toHaveValue("en");
+    const options = screen.getAllByRole("option");
+    expect(options.map((option) => option.textContent)).toEqual(["EN", "ID"]);
   });
 
-  it("remembers the choice in the cookie proxy.ts reads", () => {
+  it("remembers the choice in the cookie proxy.ts reads and navigates", () => {
     renderWithI18n(<LanguageSwitcher locked={false} />);
-    const link = screen.getByRole("link", { name: "Bahasa Indonesia" });
-    // jsdom cannot follow the link; the cookie is written before navigation either way.
-    link.addEventListener("click", (event) => event.preventDefault());
-    fireEvent.click(link);
+    fireEvent.change(screen.getByRole("combobox", { name: "Language" }), { target: { value: "id" } });
     expect(document.cookie).toContain("lang=id");
-  });
-
-  it("names the group in Indonesian on the Indonesian page", () => {
-    mockPathname = "/id";
-    renderWithI18n(<LanguageSwitcher locked={false} />, "id");
-    expect(screen.getByRole("navigation", { name: "Bahasa" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "English" })).toHaveAttribute("href", "/en");
+    expect(push).toHaveBeenCalledWith("/id");
   });
 
   it("preserves subpaths like /app when switching language", () => {
     mockPathname = "/en/app";
     renderWithI18n(<LanguageSwitcher locked={false} />);
-    const other = screen.getByRole("link", { name: "Bahasa Indonesia" });
-    expect(other).toHaveAttribute("href", "/id/app");
+    fireEvent.change(screen.getByRole("combobox", { name: "Language" }), { target: { value: "id" } });
+    expect(push).toHaveBeenCalledWith("/id/app");
   });
 
-  it("locks the other language during an analysis and says why", () => {
+  it("names the group in Indonesian on the Indonesian page", () => {
+    mockPathname = "/id";
+    renderWithI18n(<LanguageSwitcher locked={false} />, "id");
+    expect(screen.getByRole("combobox", { name: "Bahasa" })).toHaveValue("id");
+  });
+
+  it("locks the dropdown during an analysis and says why", () => {
     renderWithI18n(<LanguageSwitcher locked />);
-    const other = screen.getByRole("link", { name: "Bahasa Indonesia" });
-    expect(other).toHaveAttribute("aria-disabled", "true");
-    expect(other).not.toHaveAttribute("href");
-    expect(other).toHaveAttribute("tabindex", "0");
-    expect(other).toHaveAccessibleDescription(
+    const select = screen.getByRole("combobox", { name: "Language" });
+    expect(select).toBeDisabled();
+    expect(select).toHaveAccessibleDescription(
       "Wait for the analysis to finish or cancel it before switching language.",
     );
   });

@@ -1,7 +1,12 @@
 "use client";
 
 import { DrawablyCard } from "@/lib/drawably";
+import { INK } from "@/lib/drawably/inks";
+import { Accent } from "./accent";
 import { useI18n } from "@/components/i18n-provider";
+
+const CARD_TILT = ["tilt-a", "tilt-b", "tilt-d"] as const;
+const CARD_INK = [INK.emerald, INK.teal, INK.blue] as const;
 
 export function LandingPrivacyByok() {
   const { t } = useI18n();
@@ -40,9 +45,9 @@ export function LandingPrivacyByok() {
     <section id="privacy" className="border-t border-subtle bg-paper/60 px-4 py-16 sm:px-6 md:py-24">
       <div className="mx-auto max-w-6xl">
         <div className="text-center">
-          <p className="text-xs font-bold uppercase tracking-wider text-secondary">Trust & Security</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-secondary">{t.landing.privacy.eyebrow}</p>
           <h2 className="mt-2 text-h2 font-bold tracking-tight text-ink sm:text-3xl">
-            {t.landing.privacy.title}
+            <Accent text={t.landing.privacy.title} accent={t.landing.privacy.titleAccent} />
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-body text-secondary">
             {t.landing.privacy.subtitle}
@@ -51,7 +56,7 @@ export function LandingPrivacyByok() {
 
         <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-3">
           {cards.map((card, i) => (
-            <DrawablyCard key={i} className="flex flex-col justify-between p-6">
+            <DrawablyCard key={card.title} stroke={CARD_INK[i]} className={`${CARD_TILT[i]} flex flex-col justify-between p-6`}>
               <div>
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-50">
                   {card.icon}

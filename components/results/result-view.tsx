@@ -7,6 +7,7 @@ import type { InspectorMark } from "@/components/inspector/highlight-overlay";
 import { PageViewer, type PageViewerHandle } from "@/components/inspector/page-viewer";
 import { JobList } from "@/components/jobs/job-card";
 import { Button } from "@/components/ui/button";
+import { DrawablyDivider } from "@/lib/drawably";
 import type { AnalysisView } from "@/lib/client/history";
 import { fillTemplate } from "@/lib/i18n/format";
 import { SuggestionList, WeaknessList, suggestionCardId, suggestionTitleId, type SuggestionLink } from "./lists";
@@ -125,8 +126,11 @@ export function ResultView({
         {notice}
         <ScoreSummary score={view.overallScore} />
         <CheckList checks={view.atsChecks} />
+        {view.weaknesses.length > 0 ? <DrawablyDivider /> : null}
         <WeaknessList weaknesses={view.weaknesses} />
+        <DrawablyDivider />
         <SuggestionList suggestions={view.suggestions} link={link} />
+        {view.mode === "mode-b" && view.jobs.length > 0 ? <DrawablyDivider /> : null}
         {view.mode === "mode-b" ? <JobList jobs={view.jobs} /> : null}
         {/* A custom model ID can be one long unbroken string, so it may wrap anywhere (G-13). */}
         <div className="space-y-1 text-small text-muted">

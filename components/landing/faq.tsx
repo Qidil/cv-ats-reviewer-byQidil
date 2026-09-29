@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { DrawablyCard } from "@/lib/drawably";
+import { Accent } from "./accent";
 import { useI18n } from "@/components/i18n-provider";
 
 export function LandingFaq() {
@@ -20,9 +21,9 @@ export function LandingFaq() {
     <section id="faq" className="border-t border-subtle bg-paper/60 px-4 py-16 sm:px-6 md:py-24">
       <div className="mx-auto max-w-4xl">
         <div className="text-center">
-          <p className="text-xs font-bold uppercase tracking-wider text-secondary">Answers</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-secondary">{t.landing.faq.eyebrow}</p>
           <h2 className="mt-2 text-h2 font-bold tracking-tight text-ink sm:text-3xl">
-            {t.landing.faq.title}
+            <Accent text={t.landing.faq.title} accent={t.landing.faq.titleAccent} />
           </h2>
         </div>
 
@@ -33,7 +34,7 @@ export function LandingFaq() {
             const panelId = `${baseId}-faq-panel-${i}`;
 
             return (
-              <DrawablyCard key={i} className="mb-2 p-1">
+              <DrawablyCard key={faq.q} className={`${i % 2 === 0 ? "tilt-d" : "tilt-0"} mb-2 p-1`}>
                 <h3>
                   <button
                     id={buttonId}
@@ -41,7 +42,7 @@ export function LandingFaq() {
                     aria-expanded={isOpen}
                     aria-controls={panelId}
                     onClick={() => setOpenIndex(isOpen ? null : i)}
-                    className="flex min-h-12 w-full items-center justify-between px-6 py-4 text-left font-semibold text-ink transition-colors hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink"
+                    className="flex min-h-12 w-full items-center justify-between px-6 py-4 text-left font-semibold text-ink"
                   >
                     <span className="text-body font-semibold">{faq.q}</span>
                     <span

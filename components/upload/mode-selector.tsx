@@ -2,7 +2,8 @@
 
 import { useId, type Ref } from "react";
 import { useI18n } from "@/components/i18n-provider";
-import { DrawablyCard } from "@/lib/drawably";
+import { DrawablyCard, DrawablyInput, DrawablyRadio, DrawablyTextarea } from "@/lib/drawably";
+import { INK } from "@/lib/drawably/inks";
 import { cn } from "@/lib/cn";
 import { fillTemplate } from "@/lib/i18n/format";
 import type { AnalysisMode } from "@/types/ats";
@@ -10,9 +11,6 @@ import type { AnalysisMode } from "@/types/ats";
 /** api.md request field limits. */
 export const JOB_TITLE_MAX = 200;
 export const JOB_DESCRIPTION_MAX = 20_000;
-
-const fieldClass =
-  "w-full rounded-md border border-strong bg-app px-3 text-body text-primary placeholder:text-muted disabled:opacity-60";
 
 /**
  * The two analysis types as radio cards: each option needs its one-line description, which a
@@ -68,13 +66,12 @@ export function ModeSelector({
                 mode === option.value && "bg-amber-50/60",
               )}
             >
-              <input
-                type="radio"
+              <DrawablyRadio
                 name="analysis-mode"
                 value={option.value}
                 checked={mode === option.value}
                 onChange={() => onModeChange(option.value)}
-                className="mt-1 size-4 shrink-0 accent-[var(--color-action)]"
+                className="mt-0.5 shrink-0"
               />
               <span>
                 <span className="block font-medium">{option.label}</span>
@@ -91,20 +88,21 @@ export function ModeSelector({
             <label htmlFor={titleId} className="mb-1.5 block text-small font-medium">
               {t.mode.jobTitle}
             </label>
-            <input
+            <DrawablyInput
+              className="w-full"
               id={titleId}
               value={jobTitle}
               maxLength={JOB_TITLE_MAX}
               autoComplete="off"
               onChange={(event) => onJobTitleChange(event.target.value)}
-              className={cn(fieldClass, "min-h-11")}
             />
           </div>
           <div>
             <label htmlFor={descriptionId} className="mb-1.5 block text-small font-medium">
               {t.mode.jobDescription}
             </label>
-            <textarea
+            <DrawablyTextarea
+              className="w-full"
               ref={descriptionRef}
               id={descriptionId}
               value={jobDescription}
@@ -113,8 +111,8 @@ export function ModeSelector({
               aria-required="true"
               aria-invalid={missingDescription}
               aria-describedby={describedBy}
+              stroke={missingDescription ? INK.coral : undefined}
               onChange={(event) => onJobDescriptionChange(event.target.value)}
-              className={cn(fieldClass, "py-2 leading-6", missingDescription && "border-critical")}
             />
             <div className="mt-1.5 flex flex-wrap justify-between gap-x-4 gap-y-1 text-small text-secondary">
               <span id={hintId}>{t.mode.jobDescriptionHint}</span>

@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { History, KeyRound, Settings } from "lucide-react";
+import { History, Home, KeyRound, Settings } from "lucide-react";
 import { Button } from "./ui/button";
+import { Tooltip } from "./ui/tooltip";
 import { useI18n } from "./i18n-provider";
 import { LanguageSwitcher } from "./language-switcher";
 
@@ -38,18 +39,32 @@ export function Header({
             <KeyRound aria-hidden className="size-4" />
             {usingOwnKey ? t.header.ownKey : t.header.freeQuota}
           </span>
-          <Button variant="icon" className="sm:px-3 text-secondary hover:text-ink" aria-label={t.header.history} onClick={onOpenHistory}>
-            <History aria-hidden className="size-5" />
+          <Link
+            href={`/${language}`}
+            aria-label={t.actions.mainPage}
+            className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 px-2.5 text-small font-medium text-secondary sm:px-3"
+          >
+            <Home aria-hidden className="size-5" />
             <span aria-hidden className="hidden sm:inline">
-              {t.header.history}
+              {t.actions.mainPage}
             </span>
-          </Button>
-          <Button variant="icon" className="sm:px-3 text-secondary hover:text-ink" aria-label={t.header.settings} onClick={onOpenSettings}>
-            <Settings aria-hidden className="size-5" />
-            <span aria-hidden className="hidden sm:inline">
-              {t.header.settings}
-            </span>
-          </Button>
+          </Link>
+          <Tooltip label={t.header.history}>
+            <Button variant="icon" className="sm:px-3" aria-label={t.header.history} onClick={onOpenHistory}>
+              <History aria-hidden className="size-5" />
+              <span aria-hidden className="hidden sm:inline">
+                {t.header.history}
+              </span>
+            </Button>
+          </Tooltip>
+          <Tooltip label={t.header.settings}>
+            <Button variant="icon" className="sm:px-3" aria-label={t.header.settings} onClick={onOpenSettings}>
+              <Settings aria-hidden className="size-5" />
+              <span aria-hidden className="hidden sm:inline">
+                {t.header.settings}
+              </span>
+            </Button>
+          </Tooltip>
         </div>
       </div>
     </header>

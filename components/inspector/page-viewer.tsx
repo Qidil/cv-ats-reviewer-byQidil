@@ -3,7 +3,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useId, useImperativeHandle, useRef, useState, type ComponentProps, type Ref } from "react";
 import { useI18n } from "@/components/i18n-provider";
-import { Button } from "@/components/ui/button";
+import { DrawablyPager, DrawablyUnderline } from "@/lib/drawably";
 import { cn } from "@/lib/cn";
 import { fillTemplate } from "@/lib/i18n/format";
 import type { CvPageImage } from "@/types/db";
@@ -169,32 +169,55 @@ export function PageViewer({
       </div>
       {pages.length > 0 ? (
         <div role="group" aria-label={t.inspector.controls} className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-1">
-            <Button variant="icon" aria-label={t.inspector.previousPage} disabled={current <= 0} onClick={() => goToPage(current - 1)}>
-              <ChevronLeft aria-hidden className="size-5" />
-            </Button>
-            <span aria-live="polite" className="min-w-28 text-center text-small text-secondary tabular-nums">
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="max-w-full overflow-x-auto pb-1">
+              {/* The pager's children start with the previous button, so the page index shifts by one. */}
+              <DrawablyPager active={current + 1} aria-label={t.preview.heading}>
+                <button
+                  type="button"
+                  aria-label={t.inspector.previousPage}
+                  disabled={current <= 0}
+                  onClick={() => goToPage(current - 1)}
+                  className="flex min-h-11 min-w-11 items-center justify-center"
+                >
+                  <ChevronLeft aria-hidden className="size-5" />
+                </button>
+                {pages.map((page, index) => (
+                  <button
+                    key={page.pageNumber}
+                    type="button"
+                    aria-label={fillTemplate(t.preview.pageLabel, { page: index + 1, count: pages.length })}
+                    onClick={() => goToPage(index)}
+                    className="min-h-11 min-w-11 text-small font-medium"
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  aria-label={t.inspector.nextPage}
+                  disabled={current >= pages.length - 1}
+                  onClick={() => goToPage(current + 1)}
+                  className="flex min-h-11 min-w-11 items-center justify-center"
+                >
+                  <ChevronRight aria-hidden className="size-5" />
+                </button>
+              </DrawablyPager>
+            </div>
+            <span aria-live="polite" className="sr-only">
               {fillTemplate(t.preview.pageLabel, { page: current + 1, count: pages.length })}
             </span>
-            <Button
-              variant="icon"
-              aria-label={t.inspector.nextPage}
-              disabled={current >= pages.length - 1}
-              onClick={() => goToPage(current + 1)}
-            >
-              <ChevronRight aria-hidden className="size-5" />
-            </Button>
           </div>
-          <div role="group" aria-label={t.inspector.zoom} className="flex rounded-md border border-subtle p-0.5">
+          <div role="group" aria-label={t.inspector.zoom} className="flex items-center gap-4">
             {ZOOM_STEPS.map((step) => (
               <button
                 key={step}
                 type="button"
                 aria-pressed={zoom === step}
                 onClick={() => setZoom(step)}
-                className="min-h-11 min-w-11 rounded px-2.5 text-small font-medium text-secondary hover:bg-surface-elevated hover:text-primary aria-pressed:bg-surface-elevated aria-pressed:text-primary"
+                className="min-h-11 min-w-11 px-2 text-small font-medium"
               >
-                {zoomLabel(step)}
+                {zoom === step ? <DrawablyUnderline>{zoomLabel(step)}</DrawablyUnderline> : zoomLabel(step)}
               </button>
             ))}
           </div>

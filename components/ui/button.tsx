@@ -1,17 +1,20 @@
+"use client";
+
 import type { ComponentProps } from "react";
+import { DrawablyButton } from "@/lib/drawably";
 import { cn } from "@/lib/cn";
 
 type Variant = "primary" | "secondary" | "icon" | "danger";
 
 /**
- * StyleGuide §7.1 / §8: Tactile editorial button styles in light mode.
- * min-h-11 keeps every button at the 44 px tap target (NFR-06).
+ * StyleGuide §7.1 / §8: every button is a sketched drawably control. The mapping keeps the
+ * original API so call sites stay unchanged; hover behavior comes from the library alone (P9-D5).
  */
-const VARIANTS: Readonly<Record<Variant, string>> = {
-  primary: "bg-ink text-white hover:bg-black active:scale-[0.98]",
-  secondary: "border border-ink/40 text-ink hover:bg-paper active:scale-[0.98]",
-  icon: "min-w-11 px-2.5 text-secondary hover:text-ink active:scale-[0.95]",
-  danger: "bg-critical-strong text-white hover:bg-critical-hover",
+const VARIANTS: Readonly<Record<Variant, { variant: "solid" | "outline"; tone?: "neutral" | "danger"; className: string }>> = {
+  primary: { variant: "solid", className: "min-h-11 px-4 text-body font-medium" },
+  secondary: { variant: "outline", tone: "neutral", className: "min-h-11 px-4 text-body font-medium" },
+  icon: { variant: "outline", tone: "neutral", className: "min-h-11 min-w-11 px-2.5 text-body font-medium" },
+  danger: { variant: "solid", tone: "danger", className: "min-h-11 px-4 text-body font-medium" },
 };
 
 export function Button({
@@ -20,15 +23,13 @@ export function Button({
   type = "button",
   ...props
 }: ComponentProps<"button"> & { variant?: Variant }) {
+  const style = VARIANTS[variant];
   return (
-    <button
+    <DrawablyButton
       type={type}
-      className={cn(
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-body font-medium transition-colors",
-        "disabled:cursor-not-allowed disabled:opacity-50",
-        VARIANTS[variant],
-        className,
-      )}
+      variant={style.variant}
+      tone={style.tone}
+      className={cn("gap-2", style.className, className)}
       {...props}
     />
   );

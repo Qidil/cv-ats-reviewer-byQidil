@@ -4,14 +4,15 @@ import { ChevronDown } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useI18n } from "@/components/i18n-provider";
 import { Badge } from "@/components/ui/badge";
-import { DrawablyCard } from "@/lib/drawably";
+import { DrawablyCard, DrawablyCircle, DrawablyHighlight } from "@/lib/drawably";
 import { cn } from "@/lib/cn";
 import type { AtsCheck } from "@/types/ats";
-import { STATUS_BAR, STATUS_TEXT, STATUS_TONE, scoreStatus, staggerVariants } from "./status";
+import { EASE_OUT, STATUS_BAR, STATUS_TEXT, STATUS_TONE, scoreStatus, staggerVariants } from "./status";
 
 export function ScoreSummary({ score }: { score: number }) {
   const { t } = useI18n();
   const status = scoreStatus(score);
+  const reduceMotion = useReducedMotion() === true;
   return (
     <section aria-labelledby="score-heading">
       <DrawablyCard className="p-5">
@@ -19,12 +20,21 @@ export function ScoreSummary({ score }: { score: number }) {
           {t.results.score}
         </h3>
         <p className="mt-1 flex items-baseline gap-2">
-          <span className="text-display tabular-nums">{score}</span>
+          <DrawablyCircle className="inline-block px-1.5">
+            <DrawablyHighlight className="px-1">
+              <span className="text-display tabular-nums">{score}</span>
+            </DrawablyHighlight>
+          </DrawablyCircle>
           <span className="text-secondary">{t.results.scoreOutOf}</span>
         </p>
         <p className={cn("mt-1 font-medium", STATUS_TEXT[status])}>{t.results.status[status]}</p>
         <div aria-hidden className="mt-4 h-2 overflow-hidden rounded-full bg-paper">
-          <div className={cn("h-full rounded-full", STATUS_BAR[status])} style={{ width: `${score}%` }} />
+          <motion.div
+            className={cn("h-full rounded-full", STATUS_BAR[status])}
+            initial={reduceMotion ? false : { width: 0 }}
+            animate={{ width: `${score}%` }}
+            transition={{ duration: reduceMotion ? 0 : 0.6, ease: EASE_OUT }}
+          />
         </div>
       </DrawablyCard>
     </section>

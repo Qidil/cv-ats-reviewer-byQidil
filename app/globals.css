@@ -106,4 +106,94 @@
     outline: 2px solid var(--color-action);
     outline-offset: 2px;
   }
+
+  /* Dialog entrance: fade and a small rise; the drawer slides in from the right (StyleGuide §8.3).
+     Exit stays instant: a native dialog hides synchronously, and a delayed close would add a bug surface. */
+  @media (prefers-reduced-motion: no-preference) {
+    /* Landing sections rise in on load; a CSS animation never leaves content hidden when an
+       observer or JS is unavailable, and `backwards` holds the start frame during a delay. */
+    .reveal {
+      animation: reveal-rise 500ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    }
+
+    /* The reveals are the div children in order: hero, engine, rubric, privacy, disclaimer, FAQ. */
+    .reveal:nth-of-type(2) {
+      animation-delay: 60ms;
+    }
+
+    .reveal:nth-of-type(3) {
+      animation-delay: 120ms;
+    }
+
+    .reveal:nth-of-type(4) {
+      animation-delay: 180ms;
+    }
+
+    .reveal:nth-of-type(5) {
+      animation-delay: 240ms;
+    }
+
+    .reveal:nth-of-type(6) {
+      animation-delay: 300ms;
+    }
+
+    @keyframes reveal-rise {
+      from {
+        opacity: 0;
+        translate: 0 16px;
+      }
+    }
+
+    dialog[open] {
+      opacity: 1;
+      translate: 0 0;
+      transition:
+        opacity 200ms ease,
+        translate 260ms cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    dialog[open]::backdrop {
+      opacity: 1;
+      transition: opacity 200ms ease;
+    }
+
+    @starting-style {
+      dialog[open] {
+        opacity: 0;
+        translate: 0 10px;
+      }
+
+      dialog[open]::backdrop {
+        opacity: 0;
+      }
+
+      dialog[open].dialog-drawer {
+        translate: 28px 0;
+      }
+    }
+
+    /* Drawer items follow the panel in, slightly apart (StyleGuide §8.3). */
+    .dialog-drawer[open] nav > ul > li {
+      animation: drawer-item 320ms cubic-bezier(0.2, 0, 0, 1) backwards;
+    }
+
+    .dialog-drawer[open] nav > ul > li:nth-child(2) {
+      animation-delay: 60ms;
+    }
+
+    .dialog-drawer[open] nav > ul > li:nth-child(3) {
+      animation-delay: 120ms;
+    }
+
+    .dialog-drawer[open] nav > ul > li:nth-child(4) {
+      animation-delay: 180ms;
+    }
+
+    @keyframes drawer-item {
+      from {
+        opacity: 0;
+        translate: 14px 0;
+      }
+    }
+  }
 }

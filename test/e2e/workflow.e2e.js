@@ -18,7 +18,8 @@ async (page) => {
     return { status: "done", ...current.result };
   }
 
-  const BASE = "http://localhost:3100";
+  // The owner's server usually runs on 3000; set page.__cvAtsE2eBase first to point the run there.
+  const BASE = page.__cvAtsE2eBase || "http://localhost:3100";
   const AI_WAIT_MS = 150_000;
   const checks = [];
   const check = (name, pass, detail = "") => checks.push({ name, pass: Boolean(pass), detail: String(detail) });
@@ -134,7 +135,7 @@ async (page) => {
           highlights: highlights.length,
           distinct: new Set(boxes).size,
           thick: highlights.filter((node) => node.className.includes("border-[2.5px]")).length,
-          counter: document.querySelector('[aria-live="polite"].tabular-nums')?.textContent ?? "",
+          counter: document.querySelector('[aria-live="polite"]')?.textContent ?? "",
         };
       });
 
@@ -159,6 +160,21 @@ async (page) => {
     // Deleting the open database makes Dexie warn in the old page; that comes from this cleanup, not the app.
     problems.length = 0;
     check("first visit redirects to /en", page.url().endsWith("/en"), page.url().replace(BASE, ""));
+
+    // Phase 9 navigation: the burger drawer on the landing page, the hero CTA, and the workspace return link.
+    await page.getByRole("button", { name: "Menu" }).click();
+    check(
+      "burger drawer opens on the landing page",
+      await page.getByRole("dialog", { name: "Menu" }).getByRole("link", { name: "FAQ" }).isVisible(),
+    );
+    await page.keyboard.press("Escape");
+    await page.getByRole("link", { name: "Start Free Review" }).click();
+    await page.waitForURL(/\/en\/app$/);
+    check("hero CTA opens the workspace", page.url().endsWith("/en/app"), page.url().replace(BASE, ""));
+    check(
+      "workspace offers the Main Page link",
+      (await page.getByRole("link", { name: "Main Page" }).getAttribute("href")) === "/en",
+    );
     check("empty form shows", await page.getByRole("button", { name: "Choose a file" }).isVisible());
 
     // 2. Mode A in English.
@@ -216,7 +232,9 @@ async (page) => {
       await highlight.click();
       await page.waitForTimeout(700);
       const focused = await page.evaluate(() => ({ tag: document.activeElement?.tagName ?? "", text: document.activeElement?.textContent ?? "" }));
-      check("a highlight focuses its card title", focused.tag === "H4" && label.endsWith(focused.text), focused.tag);
+      // A shared box lists its cards joined with "; " and focuses the lead card, so the first segment names it (DELTA-63).
+      const leadSegment = label.split("; ")[0] ?? "";
+      check("a highlight focuses its card title", focused.tag === "H4" && leadSegment.endsWith(focused.text), focused.tag);
     }
 
     // 5. History and a reload without the network.
@@ -240,8 +258,8 @@ async (page) => {
     await page.unroute("**/api/analyze");
 
     // 6. Indonesian interface, stored result unchanged.
-    await page.getByRole("link", { name: "Bahasa Indonesia" }).click();
-    await page.waitForURL(/\/id$/);
+    await page.getByRole("combobox", { name: "Language" }).selectOption("id");
+    await page.waitForURL(/\/id\/app$/);
     const stored = await page
       .getByRole("heading", { level: 2, name: "Hasil", exact: true })
       .waitFor({ timeout: 15_000 })
@@ -253,6 +271,7 @@ async (page) => {
     await page.goto(`${BASE}/`);
     await page.waitForURL(/\/id$/);
     check("/ opens /id after choosing Indonesian", page.url().endsWith("/id"), page.url().replace(BASE, ""));
+    await page.goto(`${BASE}/id/app`);
     await page.getByRole("heading", { level: 2, name: "Hasil", exact: true }).waitFor({ timeout: 15_000 });
 
     // 7. Mode B on the stored CV, in Indonesian, without choosing the file again.
@@ -278,8 +297,8 @@ async (page) => {
       check("History still lists one CV", (await drawerId.getByRole("listitem").count()) === 1);
       check("its latest analysis is the general review", await drawerId.getByText(/Tinjauan umum/).isVisible());
       await page.keyboard.press("Escape");
-      await page.getByRole("link", { name: "English" }).click();
-      await page.waitForURL(/\/en$/);
+      await page.getByRole("combobox", { name: "Bahasa" }).selectOption("en");
+      await page.waitForURL(/\/en\/app$/);
       const kept = await page
         .getByText("This result was written in Indonesian.")
         .waitFor({ timeout: 15_000 })

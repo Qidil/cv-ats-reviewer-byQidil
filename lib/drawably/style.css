@@ -1,8 +1,9 @@
+@layer components {
 .drawably-host {
   --drawably-ease: cubic-bezier(0.2, 0, 0, 1);
   --drawably-stroke: #1a1a1a;
   --drawably-fill: #1a1a1a;
-  --drawably-paper: #ffffff;
+  --drawably-paper: #faf8f5;
   --drawably-error: #dc2626;
   --drawably-success: #059669;
   position: relative;
@@ -200,7 +201,9 @@
   transform: translateX(20px);
 }
 
-.drawably-divider {
+/* The fixed height belongs to a real divider (hr or div); a quote footer only gets the drawn line. */
+hr.drawably-divider,
+div.drawably-divider {
   display: block;
   height: 10px;
   border: 0;
@@ -354,3 +357,26 @@
 .drawably-pager > button {
   min-width: 34px;
 }
+
+/* Field height keeps the 44 px control target (NFR-06) whatever the page font does. */
+:is(.drawably-inputbox, .drawably-textarea, .drawably-select) :is(input, textarea, select) {
+  min-height: 44px;
+}
+
+:is(.drawably-inputbox, .drawably-textarea) :is(input, textarea)::placeholder {
+  color: var(--color-muted, #6b7280);
+  opacity: 1;
+}
+
+/* Pen sketches sit slightly rotated like paper pieces (StyleGuide 8.1c, P9-D2). */
+.tilt-0 { rotate: 0deg; }
+.tilt-a { rotate: -1.5deg; }
+.tilt-b { rotate: 2deg; }
+.tilt-c { rotate: -2.5deg; }
+.tilt-d { rotate: 1deg; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tilt-0, .tilt-a, .tilt-b, .tilt-c, .tilt-d { rotate: none; }
+}
+}
+

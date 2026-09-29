@@ -59,6 +59,8 @@ export const id: Dictionary = {
     useOwnKey: "Pakai API key sendiri",
     removeKey: "Hapus kunci saya",
     close: "Tutup",
+    closeHint: "untuk menutup",
+    mainPage: "Halaman Utama",
   },
   privacy: "PDF diproses di server tanpa disimpan di sana. Riwayat tersimpan di browser ini.",
   progress: {
@@ -200,34 +202,54 @@ export const id: Dictionary = {
   landing: {
     badge: "100% Privasi di Sisi Klien",
     heroTitle: "Audit CV Anda dengan standar ATS nyata secara presisi",
+    heroTitleAccent: "standar ATS nyata",
     heroSubtitle:
       "Analisis PDF instan dan deterministik dengan rekomendasi baris demi baris. Tanpa penyimpanan file di server, tanpa login, dan transparansi penilaian penuh.",
+    heroSubtitleAccent: "Tanpa penyimpanan file di server",
+    stats: ["Tanpa penyimpanan file di server", "Tanpa registrasi", "10 analisis gratis per hari"],
     ctaStart: "Mulai Review Gratis",
     ctaHow: "Cara Kerja",
     ctaOpenApp: "Buka Reviewer",
+    menu: "Menu",
     navFeatures: "Fitur",
     navEngine: "Cara Kerja",
     navRubric: "Rubrik Penilaian",
     navPrivacy: "Privasi",
     navFaq: "FAQ",
     previewTitle: "Simulasi ATS Real-time",
-    previewScoreLabel: "Skor Keseluruhan",
-    previewScoreDesc: "Dihitung secara deterministik dari 6 pilar rubrik dengan penanda koordinat visual.",
+    preview: {
+      fileTitle: "CV Software Engineer",
+      score: "84 / 100",
+      row1: "Kecocokan Kata Kunci & Keahlian",
+      row2: "Struktur Dokumen",
+      row3: "Kedalaman Konten & Metrik",
+      suggestionTitle: "Saran Prioritas Tinggi",
+      suggestionLocation: "Halaman 1, Baris 18",
+      suggestionText:
+        "Sertakan metrik kuantitatif pada Pengalaman Kerja. Ubah 'Bertanggung jawab atas pipeline CI/CD' menjadi 'Membangun pipeline CI/CD yang memangkas waktu rilis dari 45 menit menjadi 8 menit'.",
+    },
     engine: {
       title: "Bagaimana Mesin Ini Bekerja",
+      titleAccent: "Mesin",
+      eyebrow: "Arsitektur",
       subtitle: "Transparansi penuh di balik layar. Tanpa trik kotak hitam, murni analisis terstruktur.",
+      step1Badge: "PDF.js",
       step1Title: "1. Ekstraksi Teks & Sanitasi di Sisi Klien",
       step1Desc:
         "PDF Anda diekstrak di memori browser via PDF.js. Teks tersembunyi (warna tidak kontras/transparan) dan rotasi halaman diisolasi untuk mencegah injeksi instruksi liar.",
+      step2Badge: "Deterministik",
       step2Title: "2. Rubrik Deterministik 6 Kriteria",
       step2Desc:
         "Mesin layout mengevaluasi hierarki tipografi, tata letak kolom tunggal, kelengkapan seksi, dan cakupan keahlian secara matematis sebelum evaluasi AI.",
+      step3Badge: "Failover AI",
       step3Title: "3. Failover Rantai Model AI",
       step3Desc:
         "Teks bersih dievaluasi oleh orkestrator model AI dengan format JSON terstruktur. Rekomendasi mengutip kalimat asli langsung dari CV Anda.",
     },
     rubric: {
       title: "Aspek Penilaian & Batasan Ketat AI",
+      titleAccent: "Penilaian",
+      eyebrow: "Objektivitas",
       subtitle: "Aturan ketat diterapkan agar audit objektif, faktual, dan bebas dari basa-basi asisten AI.",
       pillar1Title: "Format & Tata Letak (10%)",
       pillar1Desc: "Alur kolom tunggal, hierarki heading standar, dan pencegahan tabel rumit atau grafik skill bar yang merusak parsing ATS.",
@@ -247,6 +269,8 @@ export const id: Dictionary = {
     },
     privacy: {
       title: "Privasi Utama: Data Anda Milik Anda",
+      titleAccent: "Privasi Utama",
+      eyebrow: "Kepercayaan & Keamanan",
       subtitle: "Pencari kerja tidak seharusnya mengorbankan privasi data pribadi demi memeriksa resume.",
       card1Title: "Nol Retensi File di Server",
       card1Desc: "PDF yang Anda unggah hanya diproses sementara di memori dan langsung dibuang setelah ekstraksi. Kami tidak memiliki penyimpanan file.",
@@ -262,6 +286,8 @@ export const id: Dictionary = {
     },
     faq: {
       title: "Pertanyaan yang Sering Diajukan",
+      titleAccent: "Pertanyaan",
+      eyebrow: "Jawaban",
       q1: "Apakah CV ATS Reviewer benar-benar gratis?",
       a1: "Ya. Setiap pengguna mendapatkan kuota 10 kali analisis AI gratis per hari. Anda juga bisa memasukkan API key pribadi untuk analisis tanpa batas.",
       q2: "Apakah mesin ATS perusahaan dapat membaca CV dua kolom?",

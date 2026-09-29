@@ -1,6 +1,7 @@
 "use client";
 
 import { DrawablyBadge, DrawablyCard } from "@/lib/drawably";
+import { INK } from "@/lib/drawably/inks";
 import { useI18n } from "@/components/i18n-provider";
 
 export function LandingDisclaimerNotice() {
@@ -9,7 +10,7 @@ export function LandingDisclaimerNotice() {
   return (
     <section className="border-t border-subtle bg-white px-4 py-12 sm:px-6">
       <div className="mx-auto max-w-4xl">
-        <DrawablyCard className="bg-amber-50/40 p-6 sm:p-8">
+        <DrawablyCard stroke={INK.coral} className="tilt-c bg-amber-50/40 p-6 sm:p-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
             <div className="flex-shrink-0">
               <DrawablyBadge variant="scribble" className="bg-amber-200 text-xs font-bold text-amber-900">

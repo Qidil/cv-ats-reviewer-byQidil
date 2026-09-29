@@ -1,25 +1,33 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { DrawablyBadge } from "@/lib/drawably";
+import { INK } from "@/lib/drawably/inks";
 import { cn } from "@/lib/cn";
 
 export type Tone = "critical" | "advisory" | "pass";
 
-/** StyleGuide §7.2 / §8: light mode badge tones with high contrast on white surfaces. */
-const TONES: Readonly<Record<Tone, string>> = {
-  critical: "border-red-200 bg-red-50 text-red-700",
-  advisory: "border-amber-200 bg-amber-50 text-amber-800",
-  pass: "border-emerald-200 bg-emerald-50 text-emerald-800",
+/** StyleGuide §8.1b: each tone draws its sketch in the matching ink; text keeps the darker tone. */
+const INK_BY_TONE: Readonly<Record<Tone, string>> = {
+  critical: INK.coral,
+  advisory: INK.amber,
+  pass: INK.emerald,
+};
+
+const TEXT: Readonly<Record<Tone, string>> = {
+  critical: "text-red-700",
+  advisory: "text-amber-800",
+  pass: "text-emerald-800",
 };
 
 export function Badge({ tone, children, className }: { tone: Tone; children: ReactNode; className?: string }) {
   return (
-    <span
-      className={cn(
-        "inline-flex shrink-0 items-center rounded border px-2 py-0.5 text-small font-medium whitespace-nowrap",
-        TONES[tone],
-        className,
-      )}
+    <DrawablyBadge
+      variant="outline"
+      stroke={INK_BY_TONE[tone]}
+      className={cn("inline-flex shrink-0 items-center px-2 py-0.5 text-small font-medium whitespace-nowrap", TEXT[tone], className)}
     >
       {children}
-    </span>
+    </DrawablyBadge>
   );
 }

@@ -1,6 +1,8 @@
 "use client";
 
-import { DrawablyBadge, DrawablyCard } from "@/lib/drawably";
+import { DrawablyBadge, DrawablyCard, DrawablySteps } from "@/lib/drawably";
+import { INK } from "@/lib/drawably/inks";
+import { Accent } from "./accent";
 import { useI18n } from "@/components/i18n-provider";
 
 export function LandingEngineExplainer() {
@@ -8,22 +10,26 @@ export function LandingEngineExplainer() {
 
   const steps = [
     {
-      step: "01",
-      badge: "PDF.js Sandbox",
+      badge: t.landing.engine.step1Badge,
       title: t.landing.engine.step1Title,
       desc: t.landing.engine.step1Desc,
+      ink: INK.teal,
+      badgeText: "text-teal-800",
     },
     {
-      step: "02",
-      badge: "Deterministic",
+      badge: t.landing.engine.step2Badge,
       title: t.landing.engine.step2Title,
       desc: t.landing.engine.step2Desc,
+      ink: INK.blue,
+      badgeText: "text-ink",
     },
     {
-      step: "03",
-      badge: "AI Failover",
+      badge: t.landing.engine.step3Badge,
       title: t.landing.engine.step3Title,
       desc: t.landing.engine.step3Desc,
+      ink: INK.amber,
+      // The amber ink is 3.0:1: strokes only, so the label takes the darker tone (StyleGuide §8.1b).
+      badgeText: "text-amber-800",
     },
   ];
 
@@ -31,33 +37,31 @@ export function LandingEngineExplainer() {
     <section id="how-it-works" className="border-t border-subtle bg-paper/60 px-4 py-16 sm:px-6 md:py-24">
       <div className="mx-auto max-w-6xl">
         <div className="text-center">
-          <p className="text-xs font-bold uppercase tracking-wider text-secondary">Architecture</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-secondary">{t.landing.engine.eyebrow}</p>
           <h2 className="mt-2 text-h2 font-bold tracking-tight text-ink sm:text-3xl">
-            {t.landing.engine.title}
+            <Accent text={t.landing.engine.title} accent={t.landing.engine.titleAccent} />
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-body text-secondary">
             {t.landing.engine.subtitle}
           </p>
         </div>
 
-        <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-3">
-          {steps.map((item) => (
-            <DrawablyCard
-              key={item.step}
-              className="flex flex-col justify-between p-6"
-            >
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-2xl font-black text-ink/30">{item.step}</span>
-                  <DrawablyBadge variant="outline" className="text-xs">
-                    {item.badge}
-                  </DrawablyBadge>
-                </div>
-                <h3 className="mt-4 text-h3 font-bold text-ink">{item.title}</h3>
-                <p className="mt-3 text-small leading-relaxed text-secondary">{item.desc}</p>
-              </div>
-            </DrawablyCard>
-          ))}
+        <div className="mt-12">
+          <DrawablyCard className="tilt-d p-6 sm:p-8">
+            <DrawablySteps className="space-y-6">
+              {steps.map((item) => (
+                <li key={item.title}>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h3 className="text-h3 font-bold text-ink">{item.title}</h3>
+                    <DrawablyBadge variant="outline" stroke={item.ink} className={`text-xs ${item.badgeText}`}>
+                      {item.badge}
+                    </DrawablyBadge>
+                  </div>
+                  <p className="mt-2 text-small leading-relaxed text-secondary">{item.desc}</p>
+                </li>
+              ))}
+            </DrawablySteps>
+          </DrawablyCard>
         </div>
       </div>
     </section>

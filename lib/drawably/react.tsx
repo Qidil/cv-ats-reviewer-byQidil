@@ -4,8 +4,10 @@ import {
   type ComponentProps,
   type ReactElement,
   type ReactNode,
+  type Ref,
   type RefObject,
   useEffect,
+  useImperativeHandle,
   useRef,
 } from "react";
 import {
@@ -59,6 +61,12 @@ function useSketch<T extends HTMLElement>(
   return ref;
 }
 
+/** Syncs a caller-provided ref with the element the sketch attached to (React 19 ref-as-prop). */
+function useForwardedRef<T extends HTMLElement>(nodeRef: RefObject<T | null>, ref: Ref<T> | undefined) {
+  // Runs in the layout phase, after the DOM ref is attached and before passive effects.
+  useImperativeHandle(ref, () => nodeRef.current as T, [nodeRef]);
+}
+
 export type DrawablyButtonProps = DrawablyButtonOptions & ComponentProps<"button">;
 
 export function DrawablyButton({
@@ -74,10 +82,11 @@ export function DrawablyButton({
   tone,
   className,
   children,
+  ref,
   ...rest
 }: DrawablyButtonProps): ReactElement {
   const sketchRef = useRef<ButtonSketch | null>(null);
-  const ref = useSketch<HTMLButtonElement>(
+  const domRef = useSketch<HTMLButtonElement>(
     (el) =>
       (sketchRef.current = drawablyButton(el, {
         seed,
@@ -96,8 +105,9 @@ export function DrawablyButton({
   useEffect(() => {
     sketchRef.current?.setState(state ?? "idle");
   }, [state]);
+  useForwardedRef(domRef, ref);
   return (
-    <button type="button" {...rest} className={className} ref={ref}>
+    <button type="button" {...rest} className={className} ref={domRef}>
       {children}
     </button>
   );
@@ -138,15 +148,18 @@ export function DrawablyInput({
   paper,
   width,
   className,
+  ref,
   ...rest
 }: DrawablyInputProps): ReactElement {
-  const ref = useSketch<HTMLSpanElement>(
+  const fieldRef = useRef<HTMLInputElement>(null);
+  const domRef = useSketch<HTMLSpanElement>(
     (el) => drawablyInput(el, { seed, roughness, boil, stroke, fill, paper, width }),
     [seed, roughness, boil, stroke, fill, paper, width, className],
   );
+  useForwardedRef(fieldRef, ref);
   return (
-    <span className={className} ref={ref}>
-      <input {...rest} />
+    <span className={className} ref={domRef}>
+      <input {...rest} ref={fieldRef} />
     </span>
   );
 }
@@ -306,15 +319,18 @@ export function DrawablyTextarea({
   paper,
   width,
   className,
+  ref,
   ...rest
 }: DrawablyTextareaProps): ReactElement {
-  const ref = useSketch<HTMLSpanElement>(
+  const fieldRef = useRef<HTMLTextAreaElement>(null);
+  const domRef = useSketch<HTMLSpanElement>(
     (el) => drawablyTextarea(el, { seed, roughness, boil, stroke, fill, paper, width }),
     [seed, roughness, boil, stroke, fill, paper, width, className],
   );
+  useForwardedRef(fieldRef, ref);
   return (
-    <span className={className} ref={ref}>
-      <textarea {...rest} />
+    <span className={className} ref={domRef}>
+      <textarea {...rest} ref={fieldRef} />
     </span>
   );
 }

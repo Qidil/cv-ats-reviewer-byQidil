@@ -63,6 +63,8 @@ export const en = {
     useOwnKey: "Use my own API key",
     removeKey: "Remove my key",
     close: "Close",
+    closeHint: "to close",
+    mainPage: "Main Page",
   },
   privacy: "The PDF is processed on the server and not stored there. History stays in this browser.",
   progress: {
@@ -204,34 +206,54 @@ export const en = {
   landing: {
     badge: "100% Client-Side Privacy",
     heroTitle: "Audit your CV against real ATS criteria with precision",
+    heroTitleAccent: "real ATS criteria",
     heroSubtitle:
       "Instant, deterministic PDF analysis with line-by-line recommendations. Zero server file retention, no sign-up required, and full transparent scoring.",
+    heroSubtitleAccent: "Zero server file retention",
+    stats: ["Zero server file storage", "No registration required", "10 free analyses daily"],
     ctaStart: "Start Free Review",
     ctaHow: "How It Works",
     ctaOpenApp: "Open Reviewer",
+    menu: "Menu",
     navFeatures: "Features",
     navEngine: "How It Works",
     navRubric: "Scoring Rubric",
     navPrivacy: "Privacy",
     navFaq: "FAQ",
     previewTitle: "Real-time ATS Simulation",
-    previewScoreLabel: "Overall Score",
-    previewScoreDesc: "Calculated deterministically from 6 rubric checks with coordinate highlights.",
+    preview: {
+      fileTitle: "Software Engineer CV",
+      score: "84 / 100",
+      row1: "Keyword & Skills Match",
+      row2: "Document Structure",
+      row3: "Content Impact & Metrics",
+      suggestionTitle: "High Priority Suggestion",
+      suggestionLocation: "Page 1, Line 18",
+      suggestionText:
+        "Add quantitative metrics to Work Experience. Change 'Responsible for CI/CD pipeline' to 'Architected CI/CD pipeline reducing deployment cycle from 45 to 8 minutes'.",
+    },
     engine: {
       title: "How the Engine Works",
+      titleAccent: "Engine",
+      eyebrow: "Architecture",
       subtitle: "A transparent look under the hood. No black-box magic, just structured analysis.",
+      step1Badge: "PDF.js",
       step1Title: "1. Client-Side Text Extraction & Sanitization",
       step1Desc:
         "Your PDF is extracted in memory using PDF.js. Hidden text (invisible font or low contrast) and rotated pages are detected and isolated to prevent prompt injection.",
+      step2Badge: "Deterministic",
       step2Title: "2. Deterministic 6-Criteria Rubric",
       step2Desc:
         "The layout engine evaluates typography, column layout, section completeness, and skill coverage deterministically before AI evaluation.",
+      step3Badge: "AI Failover",
       step3Title: "3. Failover AI Orchestration",
       step3Desc:
         "Cleaned text is evaluated by an orchestrated AI model chain with strict structured output parsing. Recommendations quote exact lines from your CV.",
     },
     rubric: {
       title: "Evaluation Rubric & AI Constraints",
+      titleAccent: "Rubric",
+      eyebrow: "Objectivity",
       subtitle: "Strict rules enforce unbiased, factual audits without conversational fluff.",
       pillar1Title: "Formatting & Layout (10%)",
       pillar1Desc: "Single-column flow, standard font hierarchies, and avoidance of ATS-breaking tables or graphic skill bars.",
@@ -251,6 +273,8 @@ export const en = {
     },
     privacy: {
       title: "Privacy First: Your Data Stays Yours",
+      titleAccent: "Privacy First",
+      eyebrow: "Trust & Security",
       subtitle: "We believe job seekers shouldn't have to surrender their privacy for a resume check.",
       card1Title: "Zero Server File Retention",
       card1Desc: "Your uploaded PDF is processed purely in ephemeral memory and discarded immediately after extraction. We have no backend file storage.",
@@ -266,6 +290,8 @@ export const en = {
     },
     faq: {
       title: "Frequently Asked Questions",
+      titleAccent: "Questions",
+      eyebrow: "Answers",
       q1: "Is CV ATS Reviewer completely free?",
       a1: "Yes. Every visitor receives a daily quota of 10 free AI analyses per day. You can also connect your own API key for unlimited reviews.",
       q2: "Can employer ATS systems actually read multi-column CVs?",

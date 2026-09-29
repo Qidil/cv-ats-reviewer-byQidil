@@ -23,6 +23,12 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+// The language dropdown reads the router and the current path.
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/en",
+  useRouter: () => ({ push: vi.fn() }),
+}));
+
 vi.mock("@/lib/client/analyze", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/client/analyze")>()),
   sendAnalysis: vi.fn(),
@@ -189,7 +195,7 @@ describe("Dashboard", () => {
     analyze();
     expect(await screen.findByRole("alert")).toHaveTextContent("The server's answer could not be read. Try again.");
     expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Bahasa Indonesia" })).not.toHaveAttribute("aria-disabled");
+    expect(screen.getByRole("combobox", { name: "Language" })).toBeEnabled();
   });
 
   it("focuses the progress card, locks the language, and returns to the form silently on cancel", async () => {
@@ -205,7 +211,7 @@ describe("Dashboard", () => {
     const cancel = await screen.findByRole("button", { name: "Cancel" });
     // G-12: the submit button is gone, so focus lands on the card that holds Cancel.
     await waitFor(() => expect(screen.getByRole("group", { name: "Uploading the PDF: 0%" })).toHaveFocus());
-    expect(screen.getByRole("link", { name: "Bahasa Indonesia" })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("combobox", { name: "Language" })).toBeDisabled();
     fireEvent.click(cancel);
     const submit = await screen.findByRole("button", { name: "Analyze CV" });
     await waitFor(() => expect(submit).toHaveFocus());
