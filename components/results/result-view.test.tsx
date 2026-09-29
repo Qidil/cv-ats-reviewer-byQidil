@@ -78,4 +78,18 @@ describe("ResultView two-way link (AC-07.2, StyleGuide §5.2)", () => {
     act(() => vi.advanceTimersByTime(1500));
     expect(card?.className).not.toContain("ring-2");
   });
+
+  it("opens and closes each rubric check's evidence independently (Phase 10)", () => {
+    renderView();
+    const checks = within(screen.getByRole("region", { name: "Checks" }));
+    const rows = checks.getAllByRole("button", { expanded: false });
+    expect(rows.length).toBeGreaterThanOrEqual(2);
+    fireEvent.click(rows[0]);
+    fireEvent.click(rows[1]);
+    expect(rows[0]).toHaveAttribute("aria-expanded", "true");
+    expect(rows[1]).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(rows[0]);
+    expect(rows[0]).toHaveAttribute("aria-expanded", "false");
+    expect(rows[1]).toHaveAttribute("aria-expanded", "true");
+  });
 });

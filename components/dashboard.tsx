@@ -230,7 +230,7 @@ export function Dashboard() {
         }
         // Scrolled to the top instead: below 1024 px the page images sit above the report (StyleGuide §4).
         element.focus({ preventScroll: true });
-        window.scrollTo({ top: 0 });
+        window.scrollTo({ top: 0, behavior: "instant" });
         break;
       }
       default:
@@ -329,7 +329,7 @@ export function Dashboard() {
     setKeyRemoved(false);
     setFileProblem(null);
     setPhase({ kind: "analyzing", stage: "uploading", fraction: 0, startedAt: Date.now() });
-    window.scrollTo({ top: 0 });
+    window.scrollTo({ top: 0, behavior: "instant" });
     // G-12: the submit button leaves the screen, so focus goes to the progress card with its Cancel button.
     focusAfterRender("progress");
     void loadResultView();
@@ -430,7 +430,7 @@ export function Dashboard() {
     setFileProblem(null);
     setError(null);
     setPhase({ kind: "start" });
-    window.scrollTo({ top: 0 });
+    window.scrollTo({ top: 0, behavior: "instant" });
     focusAfterRender("dropzone");
   };
 

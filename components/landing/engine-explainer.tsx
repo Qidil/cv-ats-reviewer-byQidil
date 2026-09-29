@@ -34,7 +34,7 @@ export function LandingEngineExplainer() {
   ];
 
   return (
-    <section id="how-it-works" className="border-t border-subtle bg-paper/60 px-4 py-16 sm:px-6 md:py-24">
+    <section id="how-it-works" data-section="how" className="border-t border-subtle bg-paper/60 px-4 py-16 sm:px-6 md:py-24">
       <div className="mx-auto max-w-6xl">
         <div className="text-center">
           <p className="text-xs font-bold uppercase tracking-wider text-secondary">{t.landing.engine.eyebrow}</p>

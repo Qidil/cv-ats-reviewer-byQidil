@@ -42,7 +42,7 @@ export function LandingPrivacyByok() {
   ];
 
   return (
-    <section id="privacy" className="border-t border-subtle bg-paper/60 px-4 py-16 sm:px-6 md:py-24">
+    <section id="privacy" data-section="privacy" className="border-t border-subtle bg-paper/60 px-4 py-16 sm:px-6 md:py-24">
       <div className="mx-auto max-w-6xl">
         <div className="text-center">
           <p className="text-xs font-bold uppercase tracking-wider text-secondary">{t.landing.privacy.eyebrow}</p>

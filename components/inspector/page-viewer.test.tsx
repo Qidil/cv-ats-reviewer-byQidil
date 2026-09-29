@@ -67,7 +67,8 @@ function renderViewer(overrides: Partial<Parameters<typeof PageViewer>[0]> = {})
   return { onSelectHighlight, ref };
 }
 
-const counter = () => within(screen.getByRole("group", { name: "Page controls" })).getByText(/^Page \d of 3$/);
+// The header's live page position; each page image also carries its own caption, so scope by the live region.
+const counter = () => document.querySelector("[aria-live='polite']") as HTMLElement;
 const scroller = () => screen.getByRole("region", { name: "Pages" });
 
 /** Gives the page items and the scroll window the geometry jsdom does not compute. */
@@ -149,14 +150,14 @@ describe("PageViewer (FEAT-07, StyleGuide §5)", () => {
     expect(list).toHaveStyle({ width: "150%" });
   });
 
-  it("marks the current page number in the pager, not the previous arrow", () => {
+  it("keeps only the arrows and shows the live page position (Phase 10)", () => {
     renderViewer();
-    const pager = within(screen.getByRole("navigation", { name: "Pages" }));
-    expect(pager.getByRole("button", { name: "Page 1 of 3" })).toHaveAttribute("aria-current", "page");
-    expect(pager.getByRole("button", { name: "Previous page" })).not.toHaveAttribute("aria-current");
-    fireEvent.click(pager.getByRole("button", { name: "Page 3 of 3" }));
-    expect(pager.getByRole("button", { name: "Page 3 of 3" })).toHaveAttribute("aria-current", "page");
-    expect(pager.getByRole("button", { name: "Page 1 of 3" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("button", { name: "Previous page" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Next page" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Page 2 of 3" })).not.toBeInTheDocument();
+    expect(counter()).toHaveTextContent("Page 1 of 3");
+    fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+    expect(counter()).toHaveTextContent("Page 2 of 3");
   });
 
   it("draws each highlight at its share of the image in page order, red for high and yellow otherwise (BR-08)", () => {

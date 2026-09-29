@@ -33,7 +33,7 @@ export function LandingRubricTransparency() {
   ];
 
   return (
-    <section id="rubric" className="border-t border-subtle bg-white px-4 py-16 sm:px-6 md:py-24">
+    <section id="rubric" data-section="rubric" className="border-t border-subtle bg-white px-4 py-16 sm:px-6 md:py-24">
       <div className="mx-auto max-w-6xl">
         <div className="text-center">
           <p className="text-xs font-bold uppercase tracking-wider text-secondary">{t.landing.rubric.eyebrow}</p>

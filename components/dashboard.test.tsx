@@ -195,7 +195,7 @@ describe("Dashboard", () => {
     analyze();
     expect(await screen.findByRole("alert")).toHaveTextContent("The server's answer could not be read. Try again.");
     expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Language" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Language" })).toBeEnabled();
   });
 
   it("focuses the progress card, locks the language, and returns to the form silently on cancel", async () => {
@@ -211,7 +211,7 @@ describe("Dashboard", () => {
     const cancel = await screen.findByRole("button", { name: "Cancel" });
     // G-12: the submit button is gone, so focus lands on the card that holds Cancel.
     await waitFor(() => expect(screen.getByRole("group", { name: "Uploading the PDF: 0%" })).toHaveFocus());
-    expect(screen.getByRole("combobox", { name: "Language" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Language" })).toBeDisabled();
     fireEvent.click(cancel);
     const submit = await screen.findByRole("button", { name: "Analyze CV" });
     await waitFor(() => expect(submit).toHaveFocus());

@@ -3,10 +3,8 @@
 import { X } from "lucide-react";
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { useI18n } from "@/components/i18n-provider";
-import { DrawablyKbd } from "@/lib/drawably";
 import { cn } from "@/lib/cn";
 import { Button } from "./button";
-import { Tooltip } from "./tooltip";
 
 /**
  * T9: the native dialog element gives focus containment, Escape, and the inert page behind it.
@@ -58,17 +56,9 @@ export function Dialog({
         <h2 id={titleId} className="text-h3">
           {title}
         </h2>
-        <div className="flex items-center gap-3">
-          <span className="hidden items-center gap-1.5 text-small text-muted sm:flex">
-            <DrawablyKbd>Esc</DrawablyKbd>
-            {t.actions.closeHint}
-          </span>
-          <Tooltip label={t.actions.close} arrow={false}>
-            <Button variant="icon" aria-label={t.actions.close} onClick={onClose}>
-              <X aria-hidden className="size-5" />
-            </Button>
-          </Tooltip>
-        </div>
+        <Button variant="icon" aria-label={t.actions.close} onClick={onClose}>
+          <X aria-hidden className="size-5" />
+        </Button>
       </div>
       <div className="px-5 py-4">{open ? children : null}</div>
     </dialog>

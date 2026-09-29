@@ -79,7 +79,7 @@ export function Dropzone({
   const describedBy = [hintId, problem ? problemId : null].filter(Boolean).join(" ");
 
   return (
-    <section aria-labelledby={`${hintId}-label`}>
+    <section data-section="upload" aria-labelledby={`${hintId}-label`}>
       <h2 id={`${hintId}-label`} className="mb-2 text-small font-medium text-secondary">
         {t.upload.label}
       </h2>

@@ -8,7 +8,7 @@ export function LandingDisclaimerNotice() {
   const { t } = useI18n();
 
   return (
-    <section className="border-t border-subtle bg-white px-4 py-12 sm:px-6">
+    <section data-section="disclaimer" className="border-t border-subtle bg-white px-4 py-12 sm:px-6">
       <div className="mx-auto max-w-4xl">
         <DrawablyCard stroke={INK.coral} className="tilt-c bg-amber-50/40 p-6 sm:p-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">

@@ -11,7 +11,7 @@ import { LandingFaq } from "./faq";
 import { LandingFooter } from "./footer";
 import { Reveal } from "./reveal";
 
-export function LandingPage() {
+export function LandingPage({ version }: { version: string }) {
   return (
     <div className="min-h-screen bg-paper font-sans text-ink selection:bg-amber-200">
       <LandingNavbar />
@@ -39,7 +39,7 @@ export function LandingPage() {
           <LandingFaq />
         </Reveal>
       </main>
-      <LandingFooter />
+      <LandingFooter version={version} />
     </div>
   );
 }

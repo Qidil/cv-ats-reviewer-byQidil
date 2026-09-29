@@ -3,7 +3,8 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useId, useImperativeHandle, useRef, useState, type ComponentProps, type Ref } from "react";
 import { useI18n } from "@/components/i18n-provider";
-import { DrawablyPager, DrawablyUnderline } from "@/lib/drawably";
+import { Button } from "@/components/ui/button";
+import { DrawablyUnderline } from "@/lib/drawably";
 import { cn } from "@/lib/cn";
 import { fillTemplate } from "@/lib/i18n/format";
 import type { CvPageImage } from "@/types/db";
@@ -162,51 +163,33 @@ export function PageViewer({
   return (
     <div ref={root} className={cn("min-w-0", className)}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <h3 id={headingId} className="text-small font-medium text-secondary">
-          {t.preview.heading}
-        </h3>
+        <div className="flex items-center gap-2">
+          <h3 id={headingId} className="text-small font-medium text-secondary">
+            {t.preview.heading}
+          </h3>
+          {pages.length > 0 ? (
+            // Phase 10: the visible page position replaces the numbered pager buttons.
+            <span aria-live="polite" className="text-small font-medium text-ink tabular-nums">
+              {fillTemplate(t.preview.pageLabel, { page: current + 1, count: pages.length })}
+            </span>
+          ) : null}
+        </div>
         {marks.length > 0 ? <HighlightLegend /> : null}
       </div>
       {pages.length > 0 ? (
         <div role="group" aria-label={t.inspector.controls} className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2">
-            <div className="max-w-full overflow-x-auto pb-1">
-              {/* The pager's children start with the previous button, so the page index shifts by one. */}
-              <DrawablyPager active={current + 1} aria-label={t.preview.heading}>
-                <button
-                  type="button"
-                  aria-label={t.inspector.previousPage}
-                  disabled={current <= 0}
-                  onClick={() => goToPage(current - 1)}
-                  className="flex min-h-11 min-w-11 items-center justify-center"
-                >
-                  <ChevronLeft aria-hidden className="size-5" />
-                </button>
-                {pages.map((page, index) => (
-                  <button
-                    key={page.pageNumber}
-                    type="button"
-                    aria-label={fillTemplate(t.preview.pageLabel, { page: index + 1, count: pages.length })}
-                    onClick={() => goToPage(index)}
-                    className="min-h-11 min-w-11 text-small font-medium"
-                  >
-                    {index + 1}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  aria-label={t.inspector.nextPage}
-                  disabled={current >= pages.length - 1}
-                  onClick={() => goToPage(current + 1)}
-                  className="flex min-h-11 min-w-11 items-center justify-center"
-                >
-                  <ChevronRight aria-hidden className="size-5" />
-                </button>
-              </DrawablyPager>
-            </div>
-            <span aria-live="polite" className="sr-only">
-              {fillTemplate(t.preview.pageLabel, { page: current + 1, count: pages.length })}
-            </span>
+          <div className="flex min-w-0 items-center gap-1">
+            <Button variant="icon" aria-label={t.inspector.previousPage} disabled={current <= 0} onClick={() => goToPage(current - 1)}>
+              <ChevronLeft aria-hidden className="size-5" />
+            </Button>
+            <Button
+              variant="icon"
+              aria-label={t.inspector.nextPage}
+              disabled={current >= pages.length - 1}
+              onClick={() => goToPage(current + 1)}
+            >
+              <ChevronRight aria-hidden className="size-5" />
+            </Button>
           </div>
           <div role="group" aria-label={t.inspector.zoom} className="flex items-center gap-4">
             {ZOOM_STEPS.map((step) => (

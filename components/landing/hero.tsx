@@ -18,7 +18,7 @@ export function LandingHero() {
   const metricsRow = useRef<HTMLDivElement>(null);
 
   return (
-    <section className="relative overflow-hidden px-4 pt-12 pb-16 sm:px-6 md:pt-20 md:pb-24">
+    <section data-section="hero" className="relative overflow-hidden px-4 pt-12 pb-16 sm:px-6 md:pt-20 md:pb-24">
       <div className="mx-auto max-w-6xl">
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-8">
           <div className="lg:col-span-7">
@@ -47,9 +47,9 @@ export function LandingHero() {
               </Link>
               <a href="#how-it-works" tabIndex={-1}>
                 <DrawablyButton
-                  variant="scribble"
+                  variant="outline"
                   stroke={INK.teal}
-                  className="min-h-12 px-6 text-body font-medium text-ink"
+                  className="min-h-12 px-6 text-body font-medium"
                 >
                   {t.landing.ctaHow}
                 </DrawablyButton>

@@ -197,3 +197,17 @@
     }
   }
 }
+
+/* The FAQ is excluded from the hover tilt flip (Phase 10 item 7). Unlayered, so it wins over the
+   library rule inside @layer components; gated by no-preference so the reduced-motion tilt reset
+   still applies (gate SC10-02 / CR10-02). */
+@media (prefers-reduced-motion: no-preference) {
+  #faq .tilt-d:hover {
+    rotate: 1deg;
+  }
+
+  /* Anchor navigation scrolls smoothly (Phase 10 addendum R2). */
+  html {
+    scroll-behavior: smooth;
+  }
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { KeyRound } from "lucide-react";
+import { Eye, EyeOff, KeyRound } from "lucide-react";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { useI18n } from "@/components/i18n-provider";
 import { Button } from "@/components/ui/button";
@@ -215,8 +215,14 @@ function ByokForm({ onKeyChanged }: { onKeyChanged: () => void }) {
               resetFeedback();
             }}
           />
-          <Button variant="secondary" aria-controls={ids.key} onClick={() => setRevealed((value) => !value)}>
-            {revealed ? t.settings.hide : t.settings.show}
+          <Button
+            variant="icon"
+            className="sm:px-3"
+            aria-controls={ids.key}
+            aria-label={revealed ? t.settings.hide : t.settings.show}
+            onClick={() => setRevealed((value) => !value)}
+          >
+            {revealed ? <EyeOff aria-hidden className="size-5" /> : <Eye aria-hidden className="size-5" />}
           </Button>
         </div>
         <p

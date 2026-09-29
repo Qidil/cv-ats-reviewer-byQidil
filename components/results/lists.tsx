@@ -16,7 +16,7 @@ export function WeaknessList({ weaknesses }: { weaknesses: readonly string[] }) 
     return null;
   }
   return (
-    <section aria-labelledby="weaknesses-heading">
+    <section data-section="weaknesses" aria-labelledby="weaknesses-heading">
       <h3 id="weaknesses-heading" className="mb-3 text-h3">
         {t.results.weaknesses}
       </h3>
@@ -52,7 +52,7 @@ export function SuggestionList({ suggestions, link }: { suggestions: readonly Su
   const { list, item } = staggerVariants(useReducedMotion() === true);
   const ordered = [...suggestions].sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]);
   return (
-    <section aria-labelledby="suggestions-heading">
+    <section data-section="suggestions" aria-labelledby="suggestions-heading">
       <h3 id="suggestions-heading" className="mb-3 text-h3">
         {t.results.suggestions}
       </h3>

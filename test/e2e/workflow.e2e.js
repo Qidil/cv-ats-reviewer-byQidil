@@ -172,8 +172,8 @@ async (page) => {
     await page.waitForURL(/\/en\/app$/);
     check("hero CTA opens the workspace", page.url().endsWith("/en/app"), page.url().replace(BASE, ""));
     check(
-      "workspace offers the Main Page link",
-      (await page.getByRole("link", { name: "Main Page" }).getAttribute("href")) === "/en",
+      "workspace offers the Main Page button",
+      await page.getByRole("button", { name: "Main Page" }).isVisible(),
     );
     check("empty form shows", await page.getByRole("button", { name: "Choose a file" }).isVisible());
 
@@ -208,10 +208,12 @@ async (page) => {
     const shows = page.getByRole("button", { name: "Show in CV", exact: true });
     const showCount = await shows.count();
     const before = await inspectorState();
-    // DELTA-63: cards quoting the same line share one box, so there can be fewer boxes than buttons.
+    // DELTA-63: cards quoting the same full rect set share one box, so there can be fewer boxes than buttons.
+    // Two different boxes may still share their first rect (the style only shows the first), so the merge is
+    // guaranteed by the unit test and the pointer check below guards reachability.
     check(
       "every Show in CV button has a box, one box per quoted line",
-      showCount === 0 ? before.highlights === 0 : before.highlights >= 1 && before.highlights <= showCount && before.distinct === before.highlights,
+      showCount === 0 ? before.highlights === 0 : before.highlights >= 1 && before.highlights <= showCount,
       `${before.highlights} boxes for ${showCount} buttons`,
     );
     if (showCount > 0) {
@@ -258,7 +260,8 @@ async (page) => {
     await page.unroute("**/api/analyze");
 
     // 6. Indonesian interface, stored result unchanged.
-    await page.getByRole("combobox", { name: "Language" }).selectOption("id");
+    await page.getByRole("button", { name: "Language" }).click();
+    await page.getByRole("option", { name: "ID" }).click();
     await page.waitForURL(/\/id\/app$/);
     const stored = await page
       .getByRole("heading", { level: 2, name: "Hasil", exact: true })
@@ -297,7 +300,8 @@ async (page) => {
       check("History still lists one CV", (await drawerId.getByRole("listitem").count()) === 1);
       check("its latest analysis is the general review", await drawerId.getByText(/Tinjauan umum/).isVisible());
       await page.keyboard.press("Escape");
-      await page.getByRole("combobox", { name: "Bahasa" }).selectOption("en");
+      await page.getByRole("button", { name: "Bahasa" }).click();
+      await page.getByRole("option", { name: "EN" }).click();
       await page.waitForURL(/\/en\/app$/);
       const kept = await page
         .getByText("This result was written in Indonesian.")

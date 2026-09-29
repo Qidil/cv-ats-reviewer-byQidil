@@ -21,7 +21,7 @@ vi.mock("next/navigation", () => ({
 
 describe("Landing Page Components (FEAT-13, BR-14)", () => {
   it("renders full landing page in English", () => {
-    renderWithI18n(<LandingPage />, "en");
+    renderWithI18n(<LandingPage version="0.1.0" />, "en");
 
     expect(screen.getByRole("banner")).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
@@ -34,7 +34,7 @@ describe("Landing Page Components (FEAT-13, BR-14)", () => {
   });
 
   it("renders full landing page in Indonesian", () => {
-    renderWithI18n(<LandingPage />, "id");
+    renderWithI18n(<LandingPage version="0.1.0" />, "id");
 
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       "Audit CV Anda dengan standar ATS nyata secara presisi",
@@ -46,14 +46,14 @@ describe("Landing Page Components (FEAT-13, BR-14)", () => {
   });
 
   it("keeps the workspace CTA in the hero pointing at /app", () => {
-    renderWithI18n(<LandingPage />, "en");
+    renderWithI18n(<LandingPage version="0.1.0" />, "en");
 
     const cta = screen.getByRole("link", { name: "Start Free Review" });
     expect(cta).toHaveAttribute("href", "/en/app");
   });
 
   it("opens the burger drawer with the section links and the workspace action", () => {
-    renderWithI18n(<LandingPage />, "en");
+    renderWithI18n(<LandingPage version="0.1.0" />, "en");
 
     // Closed: the section links live only inside the drawer.
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -68,7 +68,7 @@ describe("Landing Page Components (FEAT-13, BR-14)", () => {
   });
 
   it("closes the drawer when a section link is clicked", () => {
-    renderWithI18n(<LandingPage />, "en");
+    renderWithI18n(<LandingPage version="0.1.0" />, "en");
 
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
     const link = within(screen.getByRole("dialog")).getByRole("link", { name: "Privacy" });
@@ -79,7 +79,7 @@ describe("Landing Page Components (FEAT-13, BR-14)", () => {
   });
 
   it("toggles FAQ accordion questions and answers", () => {
-    renderWithI18n(<LandingPage />, "en");
+    renderWithI18n(<LandingPage version="0.1.0" />, "en");
 
     const firstQuestion = screen.getByRole("button", {
       name: /Is CV ATS Reviewer completely free\?/i,
@@ -94,7 +94,7 @@ describe("Landing Page Components (FEAT-13, BR-14)", () => {
   });
 
   it("prominently renders the simulation disclaimer text", () => {
-    renderWithI18n(<LandingPage />, "en");
+    renderWithI18n(<LandingPage version="0.1.0" />, "en");
 
     expect(
       screen.getByText(/is an independent educational audit and simulation tool/i),

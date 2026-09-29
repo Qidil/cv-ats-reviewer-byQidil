@@ -43,7 +43,7 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
     notFound();
   }
   return (
-    <html lang={lang} className={`${inter.variable} ${drawablyPen.variable}`}>
+    <html lang={lang} data-scroll-behavior="smooth" className={`${inter.variable} ${drawablyPen.variable}`}>
       <body>{children}</body>
     </html>
   );
