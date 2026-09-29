@@ -5,8 +5,8 @@ import { cn } from "@/lib/cn";
 type AlertTone = "critical" | "advisory";
 
 const TONES: Readonly<Record<AlertTone, { box: string; icon: string }>> = {
-  critical: { box: "border-critical-strong/60 bg-red-950/40", icon: "text-critical" },
-  advisory: { box: "border-advisory-strong/60 bg-amber-950/40", icon: "text-advisory" },
+  critical: { box: "border-red-300 bg-red-50/90 text-red-950", icon: "text-red-700" },
+  advisory: { box: "border-amber-300 bg-amber-50/90 text-amber-950", icon: "text-amber-700" },
 };
 
 /**
@@ -49,11 +49,11 @@ export function Notice({ children, className }: { children: ReactNode; className
     <p
       role="status"
       className={cn(
-        "flex items-start gap-2 rounded-md border border-amber-800/60 bg-amber-950/50 px-3 py-2 text-small text-amber-400",
+        "flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-small text-amber-900",
         className,
       )}
     >
-      <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0" />
+      <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0 text-amber-700" />
       <span>{children}</span>
     </p>
   );

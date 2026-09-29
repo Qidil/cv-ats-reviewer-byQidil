@@ -45,7 +45,7 @@ export function Dialog({
       aria-labelledby={titleId}
       onClose={onClose}
       className={cn(
-        "border-subtle bg-surface-elevated p-0 text-primary backdrop:bg-black/60 backdrop:backdrop-blur-sm",
+        "border-subtle bg-white shadow-2xl p-0 text-primary backdrop:bg-black/40 backdrop:backdrop-blur-sm",
         side === "center"
           ? "m-auto w-[min(34rem,calc(100vw-2rem))] rounded-lg border"
           : // The browser's own dialog max-width would leave a phone drawer too narrow for its rows (G-13).

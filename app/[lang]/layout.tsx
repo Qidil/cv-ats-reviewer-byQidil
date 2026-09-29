@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import { notFound } from "next/navigation";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { LANGUAGES, isLanguage } from "@/lib/i18n/language";
@@ -8,6 +9,12 @@ import "../globals.css";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+});
+
+const drawablyPen = localFont({
+  src: "../../lib/drawably/DrawablyPen.ttf",
+  variable: "--font-drawably-pen",
+  display: "swap",
 });
 
 /** ADR-008: both languages are built ahead of time; any other segment is a 404. */
@@ -36,7 +43,7 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
     notFound();
   }
   return (
-    <html lang={lang} className={inter.variable}>
+    <html lang={lang} className={`${inter.variable} ${drawablyPen.variable}`}>
       <body>{children}</body>
     </html>
   );

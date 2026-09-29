@@ -2,6 +2,7 @@
 
 import { ChevronDown } from "lucide-react";
 import { useI18n } from "@/components/i18n-provider";
+import { DrawablyCard } from "@/lib/drawably";
 import { fillTemplate } from "@/lib/i18n/format";
 import { SUGGESTED_JOB_COUNT, type SuggestedJob } from "@/types/ats";
 
@@ -21,33 +22,39 @@ function JobCard({ job }: { job: SuggestedJob }) {
   );
   const hasSkills = job.keyStrengths.length > 0 || job.missingSkills.length > 0;
   if (!hasSkills) {
-    return <li className="rounded-lg border border-subtle bg-surface px-4 py-3">{heading}</li>;
+    return (
+      <li>
+        <DrawablyCard className="px-4 py-3">{heading}</DrawablyCard>
+      </li>
+    );
   }
   return (
-    <li className="rounded-lg border border-subtle bg-surface">
-      <details className="group">
-        <summary className="flex min-h-12 cursor-pointer list-none items-start gap-2 px-4 py-3 [&::-webkit-details-marker]:hidden">
-          <span className="min-w-0 flex-1">{heading}</span>
-          <ChevronDown
-            aria-hidden
-            className="mt-0.5 size-4 shrink-0 text-secondary transition-transform group-open:rotate-180 motion-reduce:transition-none"
-          />
-        </summary>
-        <dl className="space-y-2 px-4 pb-4 text-small">
-          {job.keyStrengths.length > 0 ? (
-            <div>
-              <dt className="text-muted">{t.results.strengths}</dt>
-              <dd className="text-secondary">{job.keyStrengths.join(", ")}</dd>
-            </div>
-          ) : null}
-          {job.missingSkills.length > 0 ? (
-            <div>
-              <dt className="text-muted">{t.results.missingSkills}</dt>
-              <dd className="text-secondary">{job.missingSkills.join(", ")}</dd>
-            </div>
-          ) : null}
-        </dl>
-      </details>
+    <li>
+      <DrawablyCard className="p-0">
+        <details className="group">
+          <summary className="flex min-h-12 cursor-pointer list-none items-start gap-2 px-4 py-3 [&::-webkit-details-marker]:hidden">
+            <span className="min-w-0 flex-1">{heading}</span>
+            <ChevronDown
+              aria-hidden
+              className="mt-0.5 size-4 shrink-0 text-secondary transition-transform group-open:rotate-180 motion-reduce:transition-none"
+            />
+          </summary>
+          <dl className="space-y-2 px-4 pb-4 text-small">
+            {job.keyStrengths.length > 0 ? (
+              <div>
+                <dt className="text-muted">{t.results.strengths}</dt>
+                <dd className="text-secondary">{job.keyStrengths.join(", ")}</dd>
+              </div>
+            ) : null}
+            {job.missingSkills.length > 0 ? (
+              <div>
+                <dt className="text-muted">{t.results.missingSkills}</dt>
+                <dd className="text-secondary">{job.missingSkills.join(", ")}</dd>
+              </div>
+            ) : null}
+          </dl>
+        </details>
+      </DrawablyCard>
     </li>
   );
 }

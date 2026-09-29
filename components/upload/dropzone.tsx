@@ -4,6 +4,7 @@ import { FileText, Upload } from "lucide-react";
 import { useId, useImperativeHandle, useRef, useState, type DragEvent, type Ref } from "react";
 import { useI18n } from "@/components/i18n-provider";
 import { Button } from "@/components/ui/button";
+import { DrawablyCard } from "@/lib/drawably";
 import { cn } from "@/lib/cn";
 import { formatFileSize } from "@/lib/i18n/format";
 import { MAX_PDF_BYTES } from "@/lib/pdf/types";
@@ -100,10 +101,10 @@ export function Dropzone({
       />
       <div onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}>
         {file ? (
-          <div
+          <DrawablyCard
             className={cn(
-              "flex flex-wrap items-center gap-3 rounded-lg border bg-surface p-4 transition-colors",
-              dragging ? "border-action bg-action/10" : "border-subtle",
+              "flex flex-wrap items-center gap-3 p-4 transition-colors",
+              dragging && "bg-amber-50/50",
             )}
           >
             <FileText aria-hidden className="size-6 shrink-0 text-secondary" />
@@ -122,12 +123,12 @@ export function Dropzone({
                 {t.upload.remove}
               </Button>
             </div>
-          </div>
+          </DrawablyCard>
         ) : (
-          <div
+          <DrawablyCard
             className={cn(
-              "flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed px-4 py-10 text-center transition-colors",
-              dragging ? "border-action bg-action/10" : problem ? "border-critical bg-surface" : "border-strong bg-surface",
+              "flex flex-col items-center justify-center gap-3 px-4 py-10 text-center transition-colors",
+              dragging && "bg-amber-50/50",
             )}
           >
             <Upload aria-hidden className="size-6 text-secondary" />
@@ -144,7 +145,7 @@ export function Dropzone({
             <p id={hintId} className="text-small text-secondary">
               {t.upload.hint}
             </p>
-          </div>
+          </DrawablyCard>
         )}
       </div>
       {problem ? (

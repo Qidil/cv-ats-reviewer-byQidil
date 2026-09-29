@@ -2,6 +2,7 @@
 
 import { useId, type Ref } from "react";
 import { useI18n } from "@/components/i18n-provider";
+import { DrawablyCard } from "@/lib/drawably";
 import { cn } from "@/lib/cn";
 import { fillTemplate } from "@/lib/i18n/format";
 import type { AnalysisMode } from "@/types/ats";
@@ -59,23 +60,27 @@ export function ModeSelector({
         {options.map((option) => (
           <label
             key={option.value}
-            className={cn(
-              "flex cursor-pointer gap-3 rounded-lg border p-4 transition-colors",
-              mode === option.value ? "border-action bg-action/10" : "border-subtle bg-surface hover:border-strong",
-            )}
+            className="block cursor-pointer"
           >
-            <input
-              type="radio"
-              name="analysis-mode"
-              value={option.value}
-              checked={mode === option.value}
-              onChange={() => onModeChange(option.value)}
-              className="mt-1 size-4 shrink-0 accent-[var(--color-action)]"
-            />
-            <span>
-              <span className="block font-medium">{option.label}</span>
-              <span className="block text-small text-secondary">{option.description}</span>
-            </span>
+            <DrawablyCard
+              className={cn(
+                "flex gap-3 p-4 transition-colors",
+                mode === option.value && "bg-amber-50/60",
+              )}
+            >
+              <input
+                type="radio"
+                name="analysis-mode"
+                value={option.value}
+                checked={mode === option.value}
+                onChange={() => onModeChange(option.value)}
+                className="mt-1 size-4 shrink-0 accent-[var(--color-action)]"
+              />
+              <span>
+                <span className="block font-medium">{option.label}</span>
+                <span className="block text-small text-secondary">{option.description}</span>
+              </span>
+            </DrawablyCard>
           </label>
         ))}
       </div>

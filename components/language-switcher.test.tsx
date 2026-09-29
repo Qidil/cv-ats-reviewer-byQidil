@@ -5,6 +5,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderWithI18n } from "@/components/test-utils/render";
 import { LanguageSwitcher } from "./language-switcher";
 
+let mockPathname = "/en";
+vi.mock("next/navigation", () => ({
+  usePathname: () => mockPathname,
+}));
+
 // next/link needs the App Router; a plain anchor keeps the props that matter here.
 vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: { href: string; children: ReactNode }) => (
@@ -16,6 +21,7 @@ vi.mock("next/link", () => ({
 
 afterEach(() => {
   document.cookie = "lang=; path=/; max-age=0";
+  mockPathname = "/en";
 });
 
 describe("LanguageSwitcher (StyleGuide §7.6)", () => {
@@ -39,9 +45,17 @@ describe("LanguageSwitcher (StyleGuide §7.6)", () => {
   });
 
   it("names the group in Indonesian on the Indonesian page", () => {
+    mockPathname = "/id";
     renderWithI18n(<LanguageSwitcher locked={false} />, "id");
     expect(screen.getByRole("navigation", { name: "Bahasa" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "English" })).toHaveAttribute("href", "/en");
+  });
+
+  it("preserves subpaths like /app when switching language", () => {
+    mockPathname = "/en/app";
+    renderWithI18n(<LanguageSwitcher locked={false} />);
+    const other = screen.getByRole("link", { name: "Bahasa Indonesia" });
+    expect(other).toHaveAttribute("href", "/id/app");
   });
 
   it("locks the other language during an analysis and says why", () => {

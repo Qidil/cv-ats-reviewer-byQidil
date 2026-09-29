@@ -4,13 +4,13 @@ import { cn } from "@/lib/cn";
 type Variant = "primary" | "secondary" | "icon" | "danger";
 
 /**
- * StyleGuide §7.1. min-h-11 keeps every button at the 44 px tap target (NFR-06); an icon button
- * has no text to widen it, so it carries the width as well.
+ * StyleGuide §7.1 / §8: Tactile editorial button styles in light mode.
+ * min-h-11 keeps every button at the 44 px tap target (NFR-06).
  */
 const VARIANTS: Readonly<Record<Variant, string>> = {
-  primary: "bg-action-strong text-white hover:bg-action-hover active:bg-action-active",
-  secondary: "border border-strong text-primary hover:bg-surface-elevated",
-  icon: "min-w-11 px-2.5 text-secondary hover:bg-surface-elevated hover:text-primary",
+  primary: "bg-ink text-white hover:bg-black active:scale-[0.98]",
+  secondary: "border border-ink/40 text-ink hover:bg-paper active:scale-[0.98]",
+  icon: "min-w-11 px-2.5 text-secondary hover:text-ink active:scale-[0.95]",
   danger: "bg-critical-strong text-white hover:bg-critical-hover",
 };
 

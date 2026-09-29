@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useId } from "react";
 import { LANGUAGE_COOKIE, LANGUAGES, type Language } from "@/lib/i18n/language";
 import { cn } from "@/lib/cn";
@@ -18,6 +19,18 @@ function remember(language: Language) {
 export function LanguageSwitcher({ locked }: { locked: boolean }) {
   const { language: current, t } = useI18n();
   const noteId = useId();
+  const pathname = usePathname() || "";
+
+  const getHref = (targetLang: Language) => {
+    if (!pathname || pathname === `/${current}`) {
+      return `/${targetLang}`;
+    }
+    if (pathname.startsWith(`/${current}/`)) {
+      return `/${targetLang}${pathname.slice(current.length + 1)}`;
+    }
+    return `/${targetLang}`;
+  };
+
   return (
     <nav aria-label={t.header.languageGroup} className="group relative">
       <ul className="flex rounded-md border border-subtle p-0.5">
@@ -55,7 +68,7 @@ export function LanguageSwitcher({ locked }: { locked: boolean }) {
                 </span>
               ) : (
                 <Link
-                  href={`/${language}`}
+                  href={getHref(language)}
                   hrefLang={language}
                   lang={language}
                   onClick={() => remember(language)}

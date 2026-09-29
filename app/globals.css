@@ -1,31 +1,37 @@
 @import "tailwindcss";
+@import "../lib/drawably/style.css";
 
 /* Tokens from project-context/StyleGuide.md. primary/secondary/muted are text tones and
    subtle/strong are border tones; buttons and focus rings use the action colors. */
 @theme {
-  --color-app: #0b0f19;
-  --color-surface: #111827;
-  --color-surface-elevated: #1f2937;
-  --color-subtle: #374151;
-  --color-strong: #6b7280;
+  --color-paper: #faf8f5;
+  --color-ink: #1a1a1a;
+  --color-ink-secondary: #4b5563;
+  --color-ink-muted: #6b7280;
 
-  --color-primary: #f9fafb;
-  --color-secondary: #9ca3af;
-  --color-muted: #8a93a3;
+  --color-app: #faf8f5;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #f4f0ea;
+  --color-subtle: #e5e0d8;
+  --color-strong: #9ca3af;
+
+  --color-primary: #1a1a1a;
+  --color-secondary: #4b5563;
+  --color-muted: #6b7280;
 
   --color-critical: #ef4444;
   --color-critical-strong: #dc2626;
   --color-critical-hover: #b91c1c;
-  /* DELTA-62: error text; critical itself is 3.90:1 on surface-elevated, under AA. */
-  --color-critical-text: #f87171;
+  /* DELTA-62: error text */
+  --color-critical-text: #dc2626;
   --color-advisory: #f59e0b;
   --color-advisory-strong: #d97706;
   --color-pass: #10b981;
   --color-pass-strong: #059669;
-  --color-action: #3b82f6;
-  --color-action-strong: #2563eb;
-  --color-action-hover: #1d4ed8;
-  --color-action-active: #1e40af;
+  --color-action: #1a1a1a;
+  --color-action-strong: #000000;
+  --color-action-hover: #333333;
+  --color-action-active: #000000;
 
   --text-display: 2.25rem;
   --text-display--line-height: 2.5rem;
@@ -60,14 +66,16 @@
   }
 }
 
-/* --font-inter is set on <html> by next/font, so it must resolve at use time. */
+/* --font-inter and --font-drawably-pen are set on <html> by next/font, so they resolve at use time. */
 @theme inline {
-  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: var(--font-drawably-pen), var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-inter: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 @layer base {
   html {
-    color-scheme: dark;
+    color-scheme: light;
+    overflow-x: clip;
     /* The page grows past the viewport when an analysis starts; a reserved gutter keeps the layout from shifting (G-11). */
     scrollbar-gutter: stable;
     /* The sticky header is about 61 px tall; anything scrolled into view lands below it (G5-06). */
@@ -76,6 +84,22 @@
 
   body {
     @apply bg-app font-sans text-body text-primary antialiased;
+    overflow-x: clip;
+  }
+
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+
+  /* Ensure Drawably cards never render synthetic box-shadows or rectangular borders */
+  .drawably-card {
+    border: 0 !important;
+    box-shadow: none !important;
   }
 
   :focus-visible {
