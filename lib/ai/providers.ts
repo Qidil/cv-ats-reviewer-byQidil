@@ -162,7 +162,7 @@ function chatCompletions(
  * a request without `x-opencode-session` (400 MissingSessionID). Other OpenAI-compatible servers ignore
  * both headers. The ID is random per analysis and says nothing about the user.
  */
-const CLIENT_NAME = "cv-ats-reviewer/0.1.0";
+const CLIENT_NAME = "doctorcv/0.1.0";
 const customHeaders = (sessionId: string | undefined): Record<string, string> => ({
   "User-Agent": CLIENT_NAME,
   ...(sessionId ? { "x-opencode-session": sessionId } : {}),

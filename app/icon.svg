@@ -1,5 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- Temporary placeholder until the owner supplies a real icon. -->
-  <rect width="32" height="32" rx="6" fill="#0b0f19"/>
-  <text x="16" y="21" fill="#f9fafb" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" text-anchor="middle">CV</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <title>Doctor CV</title>
+  <rect width="64" height="64" rx="14" fill="#1A1A1A"/>
+  <!-- Heavier strokes than the page logo so the C and the V survive at 16 px. -->
+  <g transform="translate(3.4 9.6) scale(0.7)">
+    <g stroke="#FAF8F5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M36.75 17.68A18 18 0 1 0 22 46" stroke-width="8"/>
+      <path d="M22 46C36 46.6 46 60.5 62 47.6" stroke-width="6"/>
+      <path d="M47.6 11.2 62 47.6 76.4 10.2" stroke-width="8"/>
+    </g>
+    <g fill="#FAF8F5">
+      <circle cx="47.6" cy="10.8" r="5.4"/>
+      <circle cx="76.4" cy="9.8" r="5.4"/>
+    </g>
+    <circle cx="22" cy="28" r="8.2" fill="#FEF08A"/>
+  </g>
 </svg>

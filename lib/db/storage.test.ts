@@ -1,22 +1,22 @@
 import { IDBFactory, IDBKeyRange } from "fake-indexeddb";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { AtsCheck } from "@/types/ats";
-import { CvAtsDatabase } from "./dexie";
+import { DoctorCvDatabase } from "./dexie";
 import {
   createStorage,
   StorageIntegrityError,
-  type CvAtsStorage,
+  type DoctorCvStorage,
   type NewCv,
   type NewJobMatch,
   type NewReview,
 } from "./storage";
 
-let db: CvAtsDatabase;
-let storage: CvAtsStorage;
+let db: DoctorCvDatabase;
+let storage: DoctorCvStorage;
 
 beforeEach(() => {
   // A fresh factory per test keeps every test on an empty, isolated database.
-  db = new CvAtsDatabase("cv-ats-test", { indexedDB: new IDBFactory(), IDBKeyRange });
+  db = new DoctorCvDatabase("doctorcv-test", { indexedDB: new IDBFactory(), IDBKeyRange });
   storage = createStorage(db);
 });
 

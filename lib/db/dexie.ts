@@ -1,9 +1,9 @@
 import Dexie, { type DexieOptions, type EntityTable, type Table } from "dexie";
 import type { CvEntity, CvFileEntity, CvPagesEntity, JobMatchEntity, ReviewEntity } from "@/types/db";
 
-export const DB_NAME = "CvAtsReviewerDB";
+export const DB_NAME = "DoctorCvDB";
 
-export class CvAtsDatabase extends Dexie {
+export class DoctorCvDatabase extends Dexie {
   cvs!: EntityTable<CvEntity, "id">;
   cv_files!: Table<CvFileEntity, number>;
   cv_pages!: Table<CvPagesEntity, number>;
@@ -23,13 +23,13 @@ export class CvAtsDatabase extends Dexie {
   }
 }
 
-let browserDb: CvAtsDatabase | undefined;
+let browserDb: DoctorCvDatabase | undefined;
 
 /** Opened on first use because IndexedDB does not exist during server rendering. */
-export function getDb(): CvAtsDatabase {
+export function getDb(): DoctorCvDatabase {
   if (typeof indexedDB === "undefined") {
     throw new Error("IndexedDB is not available in this environment.");
   }
-  browserDb ??= new CvAtsDatabase();
+  browserDb ??= new DoctorCvDatabase();
   return browserDb;
 }

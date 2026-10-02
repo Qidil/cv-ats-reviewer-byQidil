@@ -78,8 +78,8 @@ export interface JobMatchEntity {
 
 export const LOCAL_STORAGE_KEYS = {
   /** The provider is recognized from the key (ADR-009), so it is not stored. */
-  byokKey: "cv_ats_byok_key",
-  byokModel: "cv_ats_byok_model",
-  byokBaseUrl: "cv_ats_byok_base_url",
-  activeCvId: "cv_ats_active_cv_id",
+  byokKey: "doctorcv_byok_key",
+  byokModel: "doctorcv_byok_model",
+  byokBaseUrl: "doctorcv_byok_base_url",
+  activeCvId: "doctorcv_active_cv_id",
 } as const;

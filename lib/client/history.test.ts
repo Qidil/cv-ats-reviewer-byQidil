@@ -1,7 +1,7 @@
 import { IDBFactory, IDBKeyRange } from "fake-indexeddb";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { CvAtsDatabase } from "@/lib/db/dexie";
-import { createStorage, type CvAtsStorage } from "@/lib/db/storage";
+import { DoctorCvDatabase } from "@/lib/db/dexie";
+import { createStorage, type DoctorCvStorage } from "@/lib/db/storage";
 import type { AnalyzeResponse } from "@/types/api";
 import {
   base64ToBlob,
@@ -14,11 +14,11 @@ import {
   type AnalysisSource,
 } from "./history";
 
-let db: CvAtsDatabase;
-let storage: CvAtsStorage;
+let db: DoctorCvDatabase;
+let storage: DoctorCvStorage;
 
 beforeEach(() => {
-  db = new CvAtsDatabase("history-test", { indexedDB: new IDBFactory(), IDBKeyRange });
+  db = new DoctorCvDatabase("history-test", { indexedDB: new IDBFactory(), IDBKeyRange });
   storage = createStorage(db);
 });
 

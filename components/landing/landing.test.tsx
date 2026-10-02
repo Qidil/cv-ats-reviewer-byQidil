@@ -82,7 +82,7 @@ describe("Landing Page Components (FEAT-13, BR-14)", () => {
     renderWithI18n(<LandingPage version="0.1.0" />, "en");
 
     const firstQuestion = screen.getByRole("button", {
-      name: /Is CV ATS Reviewer completely free\?/i,
+      name: /Is Doctor CV completely free\?/i,
     });
     expect(firstQuestion).toHaveAttribute("aria-expanded", "true");
 

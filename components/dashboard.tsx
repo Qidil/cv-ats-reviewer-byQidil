@@ -33,7 +33,7 @@ import {
   type AnalysisView,
 } from "@/lib/client/history";
 import { clearPersonalKey, usePersonalKey } from "@/lib/client/settings";
-import { StorageIntegrityError, type CvAtsStorage } from "@/lib/db/storage";
+import { StorageIntegrityError, type DoctorCvStorage } from "@/lib/db/storage";
 import type { ApiErrorCode } from "@/types/api";
 import type { AnalysisMode } from "@/types/ats";
 
@@ -97,7 +97,7 @@ function toDashboardError(outcome: Extract<AnalyzeOutcome, { kind: "api-error" |
 }
 
 async function persistResult(
-  storage: CvAtsStorage,
+  storage: DoctorCvStorage,
   input: Parameters<typeof saveAnalysisResult>[1],
 ): Promise<{ ids: { cvId: number; reviewId: number } | null; notice: ResultNotice | null }> {
   try {
@@ -158,7 +158,7 @@ export function Dashboard() {
   const usingOwnKey = personalKey.apiKey !== "";
 
   /** undefined while the browser is being checked; null when IndexedDB is blocked (P4-D3). */
-  const [storage, setStorage] = useState<CvAtsStorage | null | undefined>(undefined);
+  const [storage, setStorage] = useState<DoctorCvStorage | null | undefined>(undefined);
   const [phase, setPhase] = useState<Phase>({ kind: "start" });
   const [chosen, setChosen] = useState<ChosenCv | null>(null);
   const [fileProblem, setFileProblem] = useState<string | null>(null);
@@ -172,7 +172,7 @@ export function Dashboard() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
 
-  const storageReady = useRef<Promise<CvAtsStorage | null> | null>(null);
+  const storageReady = useRef<Promise<DoctorCvStorage | null> | null>(null);
   const abort = useRef<AbortController | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const dropzone = useRef<DropzoneHandle>(null);

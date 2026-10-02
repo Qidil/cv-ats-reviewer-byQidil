@@ -4,7 +4,7 @@
  */
 export const en = {
   meta: {
-    title: "CV ATS Reviewer",
+    title: "Doctor CV",
     description: "Check a PDF CV against common ATS criteria and see which lines to change.",
   },
   languageNames: { en: "English", id: "Bahasa Indonesia" },
@@ -15,8 +15,8 @@ export const en = {
   /** DELTA-50: every quota reset or retry time, on the 24-hour clock. */
   quotaTime: "{time} GMT+8",
   header: {
-    appName: "CV ATS Reviewer",
-    appShortName: "CV ATS",
+    appName: "Doctor CV",
+    appShortName: "Doctor CV",
     languageGroup: "Language",
     languageLocked: "Wait for the analysis to finish or cancel it before switching language.",
     history: "History",
@@ -285,13 +285,13 @@ export const en = {
     disclaimer: {
       title: "Simulation Notice & Disclaimer",
       badge: "Educational Tool",
-      text: "CV ATS Reviewer is an independent educational audit and simulation tool. It emulates common Applicant Tracking System (ATS) parsing heuristics, formatting rules, and recruiter evaluation criteria. It is not affiliated with, endorsed by, or representative of any proprietary corporate ATS vendor (such as Workday, Taleo, Greenhouse, or Lever), and does not guarantee job interview invitations or hiring outcomes.",
+      text: "Doctor CV is an independent educational audit and simulation tool. It emulates common Applicant Tracking System (ATS) parsing heuristics, formatting rules, and recruiter evaluation criteria. It is not affiliated with, endorsed by, or representative of any proprietary corporate ATS vendor (such as Workday, Taleo, Greenhouse, or Lever), and does not guarantee job interview invitations or hiring outcomes.",
     },
     faq: {
       title: "Frequently Asked Questions",
       titleAccent: "Questions",
       eyebrow: "Answers",
-      q1: "Is CV ATS Reviewer completely free?",
+      q1: "Is Doctor CV completely free?",
       a1: "Yes. Every visitor receives a daily quota of 10 free AI analyses per day. You can also connect your own API key for unlimited reviews.",
       q2: "Can employer ATS systems actually read multi-column CVs?",
       a2: "Many older or standard ATS parsers read across columns horizontally, merging unrelated text into nonsensical paragraphs. Single-column layouts remain the safest standard.",

@@ -1,4 +1,4 @@
-import { createStorage, type CvAtsStorage } from "@/lib/db/storage";
+import { createStorage, type DoctorCvStorage } from "@/lib/db/storage";
 import type { Language } from "@/lib/i18n/language";
 import { highlightsFor, type PlacedHighlight } from "@/lib/pdf/highlighter";
 import type { HiddenTextSummary } from "@/lib/pdf/types";
@@ -118,7 +118,7 @@ export function viewFromResponse(
  * analysis of a stored CV adds only the review and its job matches.
  */
 export async function saveAnalysisResult(
-  storage: CvAtsStorage,
+  storage: DoctorCvStorage,
   input: { response: AnalyzeResponse; source: AnalysisSource; pages: CvPageImage[]; existingCvId: number | null; now: string },
 ): Promise<{ cvId: number; reviewId: number }> {
   const { response, source, pages, existingCvId, now } = input;
@@ -170,7 +170,7 @@ export async function saveAnalysisResult(
 
 /** The latest review of a CV, or the named one, as a view; null when the CV is gone. */
 export async function loadStoredAnalysis(
-  storage: CvAtsStorage,
+  storage: DoctorCvStorage,
   cvId: number,
   reviewId?: number,
 ): Promise<AnalysisView | null> {
@@ -219,7 +219,7 @@ export interface HistoryEntry {
   latest: ReviewEntity | null;
 }
 
-export async function listHistory(storage: CvAtsStorage): Promise<HistoryEntry[]> {
+export async function listHistory(storage: DoctorCvStorage): Promise<HistoryEntry[]> {
   const cvs = await storage.getAllCvs();
   return Promise.all(
     cvs.map(async (cv) => ({ cv, latest: (await storage.getReviewsByCvId(cv.id))[0] ?? null })),
@@ -227,7 +227,7 @@ export async function listHistory(storage: CvAtsStorage): Promise<HistoryEntry[]
 }
 
 /** Null when the browser blocks IndexedDB (private modes); the dashboard then keeps results in React state. */
-export async function openBrowserStorage(): Promise<CvAtsStorage | null> {
+export async function openBrowserStorage(): Promise<DoctorCvStorage | null> {
   try {
     // G-16: Dexie arrives with the first storage access instead of with the page.
     const { getDb } = await import("@/lib/db/dexie");

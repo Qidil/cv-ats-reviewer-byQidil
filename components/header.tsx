@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { History, Home, KeyRound, Settings } from "lucide-react";
 import { Button } from "./ui/button";
+import { BrandLogo } from "./brand-logo";
 import { useI18n } from "./i18n-provider";
 import { LanguageSwitcher } from "./language-switcher";
 
@@ -26,11 +27,10 @@ export function Header({
         <div className="flex min-w-0 items-center gap-2 sm:gap-4">
           <Link
             href={`/${language}`}
-            className="font-semibold whitespace-nowrap text-ink transition-opacity hover:opacity-80"
+            className="flex min-h-11 min-w-11 items-center justify-center gap-2 font-semibold whitespace-nowrap text-ink transition-opacity hover:opacity-80"
           >
-            <span aria-hidden className="min-[380px]:hidden">
-              {t.header.appShortName}
-            </span>
+            <BrandLogo className="h-6" />
+            {/* Below 380 px only the mark shows; it already spells CV, and the name stays for screen readers. */}
             <span className="sr-only min-[380px]:not-sr-only">{t.header.appName}</span>
           </Link>
           <LanguageSwitcher locked={languageLocked} />

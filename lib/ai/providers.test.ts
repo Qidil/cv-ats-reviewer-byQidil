@@ -77,7 +77,7 @@ describe("provider requests (ADR-009)", () => {
     const { headers } = call("custom", "https://opencode.ai/zen/go/v1", "session-1");
     expect(headers).toMatchObject({
       Authorization: "Bearer test-key",
-      "User-Agent": "cv-ats-reviewer/0.1.0",
+      "User-Agent": "doctorcv/0.1.0",
       "x-opencode-session": "session-1",
     });
   });

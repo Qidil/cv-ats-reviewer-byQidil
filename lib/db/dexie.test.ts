@@ -1,6 +1,6 @@
 import { IDBFactory, IDBKeyRange } from "fake-indexeddb";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CvAtsDatabase, getDb } from "./dexie";
+import { DoctorCvDatabase, getDb } from "./dexie";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -18,7 +18,7 @@ describe("getDb", () => {
 
     const db = getDb();
 
-    expect(db).toBeInstanceOf(CvAtsDatabase);
+    expect(db).toBeInstanceOf(DoctorCvDatabase);
     expect(getDb()).toBe(db);
   });
 });

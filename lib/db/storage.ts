@@ -1,6 +1,6 @@
 import type { CvEntity, CvPageImage, CvPagesEntity, JobMatchEntity, ReviewEntity } from "@/types/db";
 import type { DocumentRun } from "@/types/api";
-import type { CvAtsDatabase } from "./dexie";
+import type { DoctorCvDatabase } from "./dexie";
 
 export type NewCv = Omit<CvEntity, "id"> & {
   pdfData: ArrayBuffer;
@@ -27,7 +27,7 @@ export class StorageIntegrityError extends Error {
   }
 }
 
-export function createStorage(db: CvAtsDatabase) {
+export function createStorage(db: DoctorCvDatabase) {
   const addCv = async ({ pdfData, pages = [], runs = [], runsOmitted = false, ...cv }: NewCv): Promise<number> => {
     const cvId = await db.cvs.add(cv);
     await db.cv_files.add({ cvId, pdfData });
@@ -152,4 +152,4 @@ export function createStorage(db: CvAtsDatabase) {
   };
 }
 
-export type CvAtsStorage = ReturnType<typeof createStorage>;
+export type DoctorCvStorage = ReturnType<typeof createStorage>;

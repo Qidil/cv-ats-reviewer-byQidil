@@ -1,4 +1,11 @@
-# CV ATS Reviewer
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="app/icon.svg">
+    <img src="public/doctorcv-logo.svg" alt="Doctor CV logo, a stethoscope that spells C and V" height="96">
+  </picture>
+</p>
+
+<h1 align="center">Doctor CV</h1>
 
 Upload a PDF CV, choose how to check it, and get a score with the exact lines to change. The app runs in
 English and Indonesian.
@@ -39,9 +46,10 @@ English and Indonesian.
 
 ## Languages
 
-The app lives at `/en` (the default) and `/id`. The switcher at the top left changes the interface, the
-server's messages, and the language the AI writes in, and the choice is remembered in a cookie. Quoted CV
-text stays exactly as it is in the CV. A stored result keeps the language it was written in.
+The landing page lives at `/en` (the default) and `/id`, and the workspace at `/en/app` and `/id/app`. The
+language switcher in the header changes the interface, the server's messages, and the language the AI writes
+in, and the choice is remembered in a cookie. Quoted CV text stays exactly as it is in the CV. A stored
+result keeps the language it was written in.
 
 ## Getting started
 
@@ -49,15 +57,16 @@ Requirements: Node.js 22.22.2 or later on the 22 line, 24.15 or later on the 24 
 range the jsdom test environment supports), and npm. Developed on Node.js 24.18.
 
 ```bash
-git clone https://github.com/Qidil/cv-ats-reviewer-byQidil.git
-cd cv-ats-reviewer-byQidil
+git clone https://github.com/Qidil/doctorcv.git
+cd doctorcv
 npm install
 cp .env.example .env.local   # then fill in OPENROUTER_API_KEY at least
 npm run dev
 ```
 
-Open <http://localhost:3000>; it redirects to `/en` or to the language you picked last. Without Upstash
-credentials, development counts the quota in memory, so the counters reset when the dev server restarts.
+Open <http://localhost:3000>; it redirects to the landing page at `/en` or in the language you picked last,
+and the workspace is at `/en/app`. Without Upstash credentials, development counts the quota in memory, so
+the counters reset when the dev server restarts.
 
 ## Environment variables
 
@@ -114,10 +123,11 @@ The app targets Vercel; any Node.js host that runs Next.js 16 should work. Befor
 
 | Path | Contents |
 | --- | --- |
-| `app/[lang]/` | The page and root layout, built for `/en` and `/id`. |
+| `app/[lang]/` | The landing page and the root layout, built for `/en` and `/id`. The workspace is in `app/[lang]/app/` (`/en/app`, `/id/app`). |
 | `app/api/analyze/` | The analysis route. |
+| `app/icon.svg`, `public/` | The favicon and the logo (`public/doctorcv-logo.svg`), both plain SVG. |
 | `proxy.ts` | Sends paths without a language to the saved one, or to `/en`. Tested in `proxy.test.ts`. |
-| `components/` | The dashboard and its parts: upload, results, page images, settings, history. |
+| `components/` | The dashboard and its parts: upload, results, page images, settings, history. The landing page is in `landing/`, and `brand-logo.tsx` renders the logo. |
 | `components/test-utils/` | Test render helpers and fixtures. |
 | `lib/pdf/` | PDF text extraction and page rendering (pdf.js on the server). |
 | `lib/ats/` | Hidden-text rules, the scoring rubric, and report assembly. |
@@ -126,6 +136,7 @@ The app targets Vercel; any Node.js host that runs Next.js 16 should work. Befor
 | `lib/client/` | Browser code: the analysis request, the personal key, and history. |
 | `lib/db/` | The IndexedDB schema (Dexie). |
 | `lib/i18n/` | Interface dictionaries, language negotiation, and date and size formatting. |
+| `lib/drawably/` | The hand-drawn sketch components (Drawably), copied into the repo so the build needs no extra package. |
 | `types/` | Shared types for the API, the report, and storage. |
 | `test/e2e/` | `workflow.e2e.js`, the end-to-end user journey run through the Playwright MCP. |
 

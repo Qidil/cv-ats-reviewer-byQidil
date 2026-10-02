@@ -1,6 +1,6 @@
 # Project Agent Rules & Standards
 
-Dokumen ini berisi aturan wajib bagi seluruh Agent AI yang bekerja di repositori `cv-ats-reviewer`. Semua instruksi di bawah ini mengikat dan harus dipatuhi secara ketat.
+Dokumen ini berisi aturan wajib bagi seluruh Agent AI yang bekerja di repositori `doctorcv`. Semua instruksi di bawah ini mengikat dan harus dipatuhi secara ketat.
 
 ---
 

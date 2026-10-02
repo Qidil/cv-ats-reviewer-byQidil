@@ -9,17 +9,17 @@
 // resets globals between calls.
 /* eslint-disable @typescript-eslint/no-unused-expressions -- the MCP evaluates this file as one function expression */
 async (page) => {
-  const current = page.__cvAtsE2e;
+  const current = page.__doctorCvE2e;
   if (current?.running) {
     return { status: "running", seconds: Math.round((Date.now() - current.startedAt) / 1000), checks: current.checks };
   }
   if (current) {
-    delete page.__cvAtsE2e;
+    delete page.__doctorCvE2e;
     return { status: "done", ...current.result };
   }
 
-  // The owner's server usually runs on 3000; set page.__cvAtsE2eBase first to point the run there.
-  const BASE = page.__cvAtsE2eBase || "http://localhost:3100";
+  // The owner's server usually runs on 3000; set page.__doctorCvE2eBase first to point the run there.
+  const BASE = page.__doctorCvE2eBase || "http://localhost:3100";
   const AI_WAIT_MS = 150_000;
   const checks = [];
   const check = (name, pass, detail = "") => checks.push({ name, pass: Boolean(pass), detail: String(detail) });
@@ -29,7 +29,7 @@ async (page) => {
   };
   const onPageError = (error) => problems.push(`pageerror: ${error.message.slice(0, 120)}`);
   const state = { running: true, startedAt: Date.now(), checks, result: null };
-  page.__cvAtsE2e = state;
+  page.__doctorCvE2e = state;
   page.on("console", onConsole);
   page.on("pageerror", onPageError);
   const summary = () => ({ passed: checks.filter((item) => item.pass).length, total: checks.length, checks, problems });

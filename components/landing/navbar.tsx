@@ -6,6 +6,7 @@ import { Menu } from "lucide-react";
 import { useState } from "react";
 import { DrawablyButton, DrawablyUnderline } from "@/lib/drawably";
 import { Dialog } from "@/components/ui/dialog";
+import { BrandLogo } from "@/components/brand-logo";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useI18n } from "@/components/i18n-provider";
 import { cn } from "@/lib/cn";
@@ -31,12 +32,10 @@ export function LandingNavbar() {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <Link
           href={`/${language}`}
-          className="flex items-center gap-1.5 text-body font-bold tracking-tight text-ink transition-opacity hover:opacity-80 sm:text-h3"
+          className="flex min-h-11 items-center gap-2 text-body font-bold tracking-tight text-ink transition-opacity hover:opacity-80 sm:text-h3"
         >
-          <span>CV ATS</span>
-          <span className="hidden rounded bg-subtle/60 px-1 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-secondary min-[360px]:inline">
-            Reviewer
-          </span>
+          <BrandLogo className="h-6 sm:h-7" />
+          <span>{t.header.appShortName}</span>
         </Link>
 
         <div className="flex items-center gap-2 sm:gap-3">

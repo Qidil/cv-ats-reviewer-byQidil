@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 84 64" fill="none">
+  <title>Doctor CV</title>
+  <!-- One stethoscope that spells the letters: the chestpiece ring is the C, the two earpiece tubes are the V. -->
+  <g stroke="#1A1A1A" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M36.75 17.68A18 18 0 1 0 22 46" stroke-width="6"/>
+    <path d="M22 46C36 46.6 46 60.5 62 47.6" stroke-width="4.5"/>
+    <path d="M47.6 11.2 62 47.6 76.4 10.2" stroke-width="6"/>
+  </g>
+  <g fill="#1A1A1A">
+    <circle cx="47.6" cy="10.8" r="4.6"/>
+    <circle cx="76.4" cy="9.8" r="4.6"/>
+  </g>
+  <circle cx="22" cy="28" r="8.5" fill="#0F766E"/>
+</svg>

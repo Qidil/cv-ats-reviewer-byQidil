@@ -12,7 +12,7 @@ export interface PersonalKeySettings {
 
 const EMPTY: PersonalKeySettings = { apiKey: "", model: "", baseUrl: "" };
 /** Same-tab writes do not fire the storage event, so the hook listens for this one too. */
-const CHANGE_EVENT = "cv-ats-settings-change";
+const CHANGE_EVENT = "doctorcv-settings-change";
 
 /** Where the analysis goes, by the same rules the server applies (ADR-009); null when the app cannot tell. */
 export function personalKeyProvider(settings: PersonalKeySettings): KeyProvider | null {

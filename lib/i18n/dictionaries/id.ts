@@ -3,7 +3,7 @@ import type { Dictionary } from "./en";
 /** Indonesian interface copy (FEAT-11), written natively rather than translated word for word. */
 export const id: Dictionary = {
   meta: {
-    title: "CV ATS Reviewer",
+    title: "Doctor CV",
     description: "Cek CV PDF terhadap kriteria ATS yang umum dan lihat baris mana yang perlu diubah.",
   },
   languageNames: { en: "English", id: "Bahasa Indonesia" },
@@ -11,8 +11,8 @@ export const id: Dictionary = {
   languageCodes: { en: "EN", id: "ID" },
   quotaTime: "{time} GMT+8",
   header: {
-    appName: "CV ATS Reviewer",
-    appShortName: "CV ATS",
+    appName: "Doctor CV",
+    appShortName: "Doctor CV",
     languageGroup: "Bahasa",
     languageLocked: "Tunggu analisis selesai atau batalkan dulu sebelum mengganti bahasa.",
     history: "Riwayat",
@@ -281,13 +281,13 @@ export const id: Dictionary = {
     disclaimer: {
       title: "Pemberitahuan Simulasi & Penafian Resmi",
       badge: "Alat Edukatif",
-      text: "CV ATS Reviewer adalah alat simulasi dan audit edukatif independen yang meniru heuristik parsing serta kriteria evaluasi sistem ATS modern. Alat ini bukan merupakan bagian dari sistem ATS korporat resmi tertentu (seperti Workday, Taleo, Greenhouse, atau Lever) dan tidak menjamin kelolosan seleksi kerja.",
+      text: "Doctor CV adalah alat simulasi dan audit edukatif independen yang meniru heuristik parsing serta kriteria evaluasi sistem ATS modern. Alat ini bukan merupakan bagian dari sistem ATS korporat resmi tertentu (seperti Workday, Taleo, Greenhouse, atau Lever) dan tidak menjamin kelolosan seleksi kerja.",
     },
     faq: {
       title: "Pertanyaan yang Sering Diajukan",
       titleAccent: "Pertanyaan",
       eyebrow: "Jawaban",
-      q1: "Apakah CV ATS Reviewer benar-benar gratis?",
+      q1: "Apakah Doctor CV benar-benar gratis?",
       a1: "Ya. Setiap pengguna mendapatkan kuota 10 kali analisis AI gratis per hari. Anda juga bisa memasukkan API key pribadi untuk analisis tanpa batas.",
       q2: "Apakah mesin ATS perusahaan dapat membaca CV dua kolom?",
       a2: "Banyak sistem ATS standar membaca teks secara horizontal melintasi kolom, sehingga menggabungkan teks yang tidak berhubungan. Format satu kolom adalah yang paling aman.",

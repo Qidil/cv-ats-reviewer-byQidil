@@ -10,7 +10,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/cn";
 import { listHistory, type HistoryEntry } from "@/lib/client/history";
-import type { CvAtsStorage } from "@/lib/db/storage";
+import type { DoctorCvStorage } from "@/lib/db/storage";
 import { fillTemplate, formatDateTime } from "@/lib/i18n/format";
 
 export interface HistoryActions {
@@ -31,7 +31,7 @@ export function HistoryDrawer({
 }: {
   open: boolean;
   onClose: () => void;
-  storage: CvAtsStorage | null | undefined;
+  storage: DoctorCvStorage | null | undefined;
   busy: boolean;
   activeCvId: number | null;
   actions: HistoryActions;
@@ -72,7 +72,7 @@ function HistoryList({
   activeCvId,
   actions,
 }: {
-  storage: CvAtsStorage;
+  storage: DoctorCvStorage;
   busy: boolean;
   activeCvId: number | null;
   actions: HistoryActions;

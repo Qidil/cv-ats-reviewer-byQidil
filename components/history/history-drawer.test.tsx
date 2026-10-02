@@ -5,16 +5,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { analyzeResponse, pdfFile } from "@/components/test-utils/fixtures";
 import { renderWithI18n } from "@/components/test-utils/render";
 import { saveAnalysisResult } from "@/lib/client/history";
-import { CvAtsDatabase } from "@/lib/db/dexie";
-import { createStorage, type CvAtsStorage } from "@/lib/db/storage";
+import { DoctorCvDatabase } from "@/lib/db/dexie";
+import { createStorage, type DoctorCvStorage } from "@/lib/db/storage";
 import type { Language } from "@/lib/i18n/language";
 import { HistoryDrawer, type HistoryActions } from "./history-drawer";
 
-let db: CvAtsDatabase;
-let storage: CvAtsStorage;
+let db: DoctorCvDatabase;
+let storage: DoctorCvStorage;
 
 beforeEach(() => {
-  db = new CvAtsDatabase("history-drawer-test", { indexedDB: new IDBFactory(), IDBKeyRange });
+  db = new DoctorCvDatabase("history-drawer-test", { indexedDB: new IDBFactory(), IDBKeyRange });
   storage = createStorage(db);
 });
 
@@ -34,7 +34,7 @@ function seed(fileName: string, language: Language = "en") {
   });
 }
 
-function renderDrawer(options: { storage?: CvAtsStorage | null; busy?: boolean } = {}) {
+function renderDrawer(options: { storage?: DoctorCvStorage | null; busy?: boolean } = {}) {
   const actions: HistoryActions = {
     onOpenCv: vi.fn(async () => true),
     onDeleteCv: vi.fn((cvId: number) => storage.deleteCv(cvId)),
